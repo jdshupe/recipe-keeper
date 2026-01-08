@@ -2517,26 +2517,26 @@ textarea.form-input {
 .stats-section {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
 .stat-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
   padding: 1.5rem;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: box-shadow 0.2s, background-color 0.3s;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .stat-icon {
@@ -2551,16 +2551,17 @@ textarea.form-input {
 
 .stat-label {
   font-size: 0.875rem;
-  color: var(--text-muted);
+  color: var(--text-light);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 /* Suggestion Section */
 .suggestion-section {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
   padding: 1.5rem;
   margin-bottom: 2rem;
 }
@@ -2575,6 +2576,7 @@ textarea.form-input {
 .suggestion-header h2 {
   margin: 0;
   font-size: 1.25rem;
+  color: var(--text-heading);
 }
 
 .suggestion-container {
@@ -2587,21 +2589,21 @@ textarea.form-input {
   text-decoration: none;
   color: inherit;
   padding: 1rem;
-  border-radius: var(--radius);
+  border-radius: 8px;
   transition: background 0.2s;
 }
 
 .suggestion-card:hover {
-  background: var(--bg-secondary);
+  background: var(--bg-hover);
 }
 
 .suggestion-image {
   flex-shrink: 0;
   width: 150px;
   height: 120px;
-  border-radius: var(--radius);
+  border-radius: 8px;
   overflow: hidden;
-  background: var(--bg-secondary);
+  background: var(--placeholder-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2615,6 +2617,7 @@ textarea.form-input {
 
 .suggestion-image .no-image {
   font-size: 3rem;
+  color: var(--placeholder-icon);
 }
 
 .suggestion-info {
@@ -2626,13 +2629,14 @@ textarea.form-input {
 
 .suggestion-title {
   margin: 0;
-  font-size: 1.25rem;
-  color: var(--text-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-heading);
 }
 
 .suggestion-description {
   margin: 0;
-  color: var(--text-muted);
+  color: var(--text-light);
   font-size: 0.9rem;
   line-height: 1.5;
   display: -webkit-box;
@@ -2645,14 +2649,14 @@ textarea.form-input {
   display: flex;
   gap: 1rem;
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text-light);
   margin-top: auto;
 }
 
 .suggestion-empty {
   text-align: center;
   padding: 2rem;
-  color: var(--text-muted);
+  color: var(--text-light);
 }
 
 /* Quick Actions */
@@ -2662,33 +2666,34 @@ textarea.form-input {
 
 .quick-actions h2 {
   margin-bottom: 1rem;
+  color: var(--text-heading);
 }
 
 .actions-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .action-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
   padding: 1.5rem;
   text-align: center;
   text-decoration: none;
-  color: var(--text-primary);
+  color: var(--text-heading);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  transition: box-shadow 0.2s, background-color 0.3s;
 }
 
 .action-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary);
+  box-shadow: var(--shadow-card-hover);
+  text-decoration: none;
 }
 
 .action-icon {
@@ -2696,7 +2701,7 @@ textarea.form-input {
 }
 
 .action-label {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.9rem;
 }
 
@@ -2704,10 +2709,12 @@ textarea.form-input {
 @media (max-width: 768px) {
   .stats-section {
     grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
   }
   
   .actions-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
   
   .suggestion-card {
