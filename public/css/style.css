@@ -1092,10 +1092,18 @@ h2 {
   text-decoration: none;
 }
 
-.favorite-btn {
+/* Card Actions (favorite + quick add buttons) */
+.card-actions {
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.favorite-btn,
+.quick-add-btn {
   width: 36px;
   height: 36px;
   border: none;
@@ -1111,13 +1119,79 @@ h2 {
   box-shadow: var(--shadow-sm);
 }
 
-.favorite-btn:hover {
+.favorite-btn:hover,
+.quick-add-btn:hover {
   background: var(--bg-card);
   transform: scale(1.1);
 }
 
 .favorite-btn.active {
   color: var(--star-active);
+}
+
+.quick-add-btn:hover {
+  color: var(--accent-primary);
+}
+
+/* Quick Add Dropdown */
+.quick-add-dropdown {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  min-width: 220px;
+  max-width: 280px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.quick-add-header {
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-heading);
+}
+
+.quick-add-options {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.quick-add-option {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  transition: background 0.15s;
+}
+
+.quick-add-option:hover {
+  background: var(--bg-hover);
+}
+
+.quick-add-new {
+  border-top: 1px solid var(--border-light);
+  color: var(--accent-primary);
+  font-weight: 500;
+}
+
+.quick-add-loading,
+.quick-add-empty,
+.quick-add-error {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.875rem;
+}
+
+.quick-add-error {
+  color: var(--error);
 }
 
 /* Filter Buttons */

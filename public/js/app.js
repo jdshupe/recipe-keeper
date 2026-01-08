@@ -204,6 +204,121 @@ function renderSuggestionCard(recipe) {
 }
 
 // =====================
+// Quick Add to Shopping List
+// =====================
+
+let quickAddDropdownActive = null;
+
+async function showQuickAddDropdown(recipeSlug, recipeTitle, event) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  // Close any existing dropdown
+  closeQuickAddDropdown();
+  
+  const button = event.currentTarget;
+  const rect = button.getBoundingClientRect();
+  
+  // Create dropdown
+  const dropdown = document.createElement('div');
+  dropdown.className = 'quick-add-dropdown';
+  dropdown.innerHTML = '<div class="quick-add-loading"><span class="spinner"></span></div>';
+  
+  // Position dropdown
+  dropdown.style.position = 'fixed';
+  dropdown.style.top = `${rect.bottom + 4}px`;
+  dropdown.style.right = `${window.innerWidth - rect.right}px`;
+  
+  document.body.appendChild(dropdown);
+  quickAddDropdownActive = dropdown;
+  
+  // Load shopping lists
+  try {
+    const result = await api('/shopping-lists');
+    const lists = result.success ? result.data : [];
+    
+    dropdown.innerHTML = `
+      <div class="quick-add-header">Add to Shopping List</div>
+      <div class="quick-add-options">
+        ${lists.length > 0 ? lists.map(list => `
+          <button class="quick-add-option" onclick="quickAddToList('${list.id}', '${recipeSlug}', '${list.name.replace(/'/g, "\\'")}')">
+            📋 ${list.name}
+          </button>
+        `).join('') : '<div class="quick-add-empty">No lists yet</div>'}
+        <button class="quick-add-option quick-add-new" onclick="quickAddCreateNew('${recipeSlug}', '${recipeTitle}')">
+          ➕ Create New List
+        </button>
+      </div>
+    `;
+  } catch (err) {
+    dropdown.innerHTML = '<div class="quick-add-error">Failed to load lists</div>';
+  }
+  
+  // Close on click outside
+  setTimeout(() => {
+    document.addEventListener('click', closeQuickAddDropdownOnClickOutside);
+  }, 10);
+}
+
+function closeQuickAddDropdown() {
+  if (quickAddDropdownActive) {
+    quickAddDropdownActive.remove();
+    quickAddDropdownActive = null;
+  }
+  document.removeEventListener('click', closeQuickAddDropdownOnClickOutside);
+}
+
+function closeQuickAddDropdownOnClickOutside(event) {
+  if (quickAddDropdownActive && !quickAddDropdownActive.contains(event.target)) {
+    closeQuickAddDropdown();
+  }
+}
+
+async function quickAddToList(listId, recipeSlug, listName) {
+  closeQuickAddDropdown();
+  
+  try {
+    const result = await api(`/shopping-lists/${listId}/add-recipe`, {
+      method: 'POST',
+      body: { recipeSlug }
+    });
+    
+    if (result.success) {
+      showToast(`Added to "${listName}"`, 'success');
+    } else {
+      showToast(result.error || 'Failed to add to list', 'error');
+    }
+  } catch (err) {
+    showToast('Failed to add to list', 'error');
+  }
+}
+
+async function quickAddCreateNew(recipeSlug, recipeTitle) {
+  closeQuickAddDropdown();
+  
+  const listName = prompt('Enter a name for the new shopping list:', `${recipeTitle} Shopping`);
+  if (!listName || !listName.trim()) return;
+  
+  try {
+    const result = await api('/shopping-lists', {
+      method: 'POST',
+      body: { 
+        name: listName.trim(),
+        recipeSlugs: [recipeSlug]
+      }
+    });
+    
+    if (result.success) {
+      showToast(`Created "${listName}" with ingredients`, 'success');
+    } else {
+      showToast(result.error || 'Failed to create list', 'error');
+    }
+  } catch (err) {
+    showToast('Failed to create list', 'error');
+  }
+}
+
+// =====================
 // Recipe Scaling System
 // =====================
 
@@ -739,9 +854,14 @@ function renderRecipeCard(recipe) {
           ${renderTags(recipe.tags)}
         </div>
       </a>
-      <button class="favorite-btn ${recipe.favorite ? 'active' : ''}" onclick="toggleFavorite('${slug}', event)" title="${recipe.favorite ? 'Remove from favorites' : 'Add to favorites'}">
-        ${recipe.favorite ? '★' : '☆'}
-      </button>
+      <div class="card-actions">
+        <button class="favorite-btn ${recipe.favorite ? 'active' : ''}" onclick="toggleFavorite('${slug}', event)" title="${recipe.favorite ? 'Remove from favorites' : 'Add to favorites'}">
+          ${recipe.favorite ? '★' : '☆'}
+        </button>
+        <button class="quick-add-btn" onclick="showQuickAddDropdown('${slug}', '${recipe.title.replace(/'/g, "\\'")}', event)" title="Add to shopping list">
+          🛒
+        </button>
+      </div>
     </div>
   `;
 }
@@ -1072,6 +1192,7 @@ async function loadRecipe(slug) {
 
     <div class="actions-bar">
       <button onclick="startCookMode('${slug}')" class="btn btn-cook-mode">👨‍🍳 Start Cooking</button>
+      <button onclick="showQuickAddDropdown('${slug}', '${recipe.title.replace(/'/g, "\\'")}', event)" class="btn btn-secondary">🛒 Add to Shopping List</button>
       <button onclick="toggleFavoriteDetail('${slug}')" class="btn ${recipe.favorite ? 'btn-primary' : 'btn-secondary'}" id="favorite-btn">
         ${recipe.favorite ? '★ Favorited' : '☆ Add to Favorites'}
       </button>
