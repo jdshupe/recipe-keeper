@@ -1,10 +1,6 @@
 ---
 slug: chipotle-chicken-and-savory-yellow-rice-with-salsa-fresca-and-spicy-lime-cream
 title: Chipotle Chicken and Savory Yellow Rice with Salsa Fresca and Spicy Lime Cream
-source: >-
-  https://www.hellofresh.com/recipes/chipotle-chicken-and-savory-yellow-rice-5dadc48faad7a05b7b3a00d2
-image: >-
-  https://img.hellofresh.com/f_auto,fl_lossy,h_640,q_auto,w_1200/hellofresh_s3/image/chipotle-chicken-and-savory-yellow-rice-4adcb188.jpg
 description: >-
   Bowls have gone beyond “having a moment” and officially transformed into a
   dinnertime staple. And why not? They’re hearty, comforting, and so versatile.
@@ -13,11 +9,14 @@ description: >-
   bowl is sure to satisfy.
 prepTime: null
 cookTime: null
-totalTime: 25 mins
 servings: '2'
 tags:
   - main course
   - Mexican
+source: >-
+  https://www.hellofresh.com/recipes/chipotle-chicken-and-savory-yellow-rice-5dadc48faad7a05b7b3a00d2
+image: >-
+  https://img.hellofresh.com/f_auto,fl_lossy,h_640,q_auto,w_1200/hellofresh_s3/image/chipotle-chicken-and-savory-yellow-rice-4adcb188.jpg
 ingredients:
   - 1 unit Red Onion
   - 1 unit Roma Tomato
@@ -34,58 +33,54 @@ ingredients:
   - Salt
   - Pepper
 instructions:
-  - |-
-    Wash and dry all produce. Halve,
-    peel, and finely dice onion. Dice tomato.
-    Zest and quarter lime (quarter both
-    limes for 4 servings). Mince cilantro
-    leaves and stems.
-  - |-
-    Melt 1 TBSP butter (2 TBSP for 4
-    servings) in a medium pot over mediumhigh
-    heat. Add half the onion and cook
-    until slightly softened, 1-2 minutes.
-    Stir in 1¼ cups water (2¼ cups for 4),
-    stock concentrate, ¼ tsp turmeric (½
-    tsp for 4; we sent more), and salt. Bring
-    to a boil, then stir in rice. Cover and
-    reduce to a low simmer. Cook until rice is
-    tender, 15-18 minutes. Keep covered off
-    heat until ready to serve.
-  - |-
-    Pat chicken dry with paper towels;
-    season all over with salt, pepper, and
-    a pinch of chipotle powder (use up
-    to ¼ tsp if you like spicy food). Heat a
-    large drizzle of oil in a large pan over
-    medium-high heat. Add chicken; cook
-    until browned and cooked through, 3-5
-    minutes per side. (TIP: Lower heat if
-    chipotle powder is browning too quickly.)
-    Turn off heat; transfer to a cutting board.
-  - |-
-    While chicken cooks, combine
-    tomato, cilantro, and 2 TBSP onion (3
-    TBSP for 4 servings) in a medium bowl
-    (taste and add more onion if desired).
-    Squeeze in lime juice to taste. Season
-    with salt and pepper. Set aside, stirring
-    occasionally, until ready to serve.
-  - |-
-    In a small bowl, combine sour
-    cream, lime juice and zest to taste, and
-    a pinch of chipotle powder (for an even
-    spicier kick, use up to ¼ tsp). Season
-    with salt and pepper.
-  - |-
-    Fluff rice with a fork; stir in 1 TBSP
-    butter, half the salsa, any remaining lime
-    zest, salt, and pepper. Divide between
-    bowls. Slice chicken crosswise; arrange over
-    rice. Top chicken with spicy lime cream
-    and remaining salsa. Cut any remaining
-    lime into wedges; serve on the side.
-dateAdded: '2026-01-08T17:03:31.181Z'
+  - 'Wash and dry all produce. Halve,'
+  - 'peel, and finely dice onion. Dice tomato.'
+  - Zest and quarter lime (quarter both
+  - limes for 4 servings). Mince cilantro
+  - leaves and stems.
+  - Melt 1 TBSP butter (2 TBSP for 4
+  - servings) in a medium pot over mediumhigh
+  - heat. Add half the onion and cook
+  - 'until slightly softened, 1-2 minutes.'
+  - 'Stir in 1¼ cups water (2¼ cups for 4),'
+  - 'stock concentrate, ¼ tsp turmeric (½'
+  - 'tsp for 4; we sent more), and salt. Bring'
+  - 'to a boil, then stir in rice. Cover and'
+  - reduce to a low simmer. Cook until rice is
+  - 'tender, 15-18 minutes. Keep covered off'
+  - heat until ready to serve.
+  - Pat chicken dry with paper towels;
+  - 'season all over with salt, pepper, and'
+  - a pinch of chipotle powder (use up
+  - to ¼ tsp if you like spicy food). Heat a
+  - large drizzle of oil in a large pan over
+  - medium-high heat. Add chicken; cook
+  - 'until browned and cooked through, 3-5'
+  - 'minutes per side. (TIP: Lower heat if'
+  - chipotle powder is browning too quickly.)
+  - Turn off heat; transfer to a cutting board.
+  - 'While chicken cooks, combine'
+  - 'tomato, cilantro, and 2 TBSP onion (3'
+  - TBSP for 4 servings) in a medium bowl
+  - (taste and add more onion if desired).
+  - Squeeze in lime juice to taste. Season
+  - 'with salt and pepper. Set aside, stirring'
+  - 'occasionally, until ready to serve.'
+  - 'In a small bowl, combine sour'
+  - 'cream, lime juice and zest to taste, and'
+  - a pinch of chipotle powder (for an even
+  - 'spicier kick, use up to ¼ tsp). Season'
+  - with salt and pepper.
+  - Fluff rice with a fork; stir in 1 TBSP
+  - 'butter, half the salsa, any remaining lime'
+  - 'zest, salt, and pepper. Divide between'
+  - bowls. Slice chicken crosswise; arrange over
+  - rice. Top chicken with spicy lime cream
+  - and remaining salsa. Cut any remaining
+  - lime into wedges; serve on the side.
+favorite: false
 rating: 3
+personalNotes: ''
+dateAdded: '2026-01-08T17:03:31.181Z'
 ---
 
