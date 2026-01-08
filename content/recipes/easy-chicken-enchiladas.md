@@ -11,10 +11,10 @@ description: >-
 prepTime: 10 mins
 cookTime: 20 mins
 totalTime: 30 mins
-servings: '4,4 servings'
+servings: '4'
 tags:
-  - - Main
-  - - Mexican
+  - Main
+  - Mexican
 ingredients:
   - 1 ½ cups cooked shredded chicken
   - '2 cups easy enchilada sauce, (divided)'
