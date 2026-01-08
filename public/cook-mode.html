@@ -5,8 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Cook Mode - Recipe Keeper</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script>
+    // Apply dark mode immediately to prevent flash
+    if (localStorage.getItem('darkMode') === 'true' || 
+        (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
 </head>
 <body class="cook-mode-body">
+  <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode" style="position: fixed; top: 1rem; right: 1rem; z-index: 1000;">🌙</button>
   <div id="cook-mode-app">
     <div class="loading"><span class="spinner"></span> Loading recipe...</div>
   </div>
