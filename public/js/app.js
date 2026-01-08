@@ -9,6 +9,134 @@ async function api(endpoint, options = {}) {
 }
 
 // =====================
+// Keyboard Shortcuts
+// =====================
+
+const SHORTCUTS = [
+  { key: '/', description: 'Focus search', action: () => focusSearch() },
+  { key: 'n', description: 'New recipe', action: () => window.location.href = '/add-recipe.html' },
+  { key: 'h', description: 'Go home', action: () => window.location.href = '/' },
+  { key: 'r', description: 'All recipes', action: () => window.location.href = '/recipes.html' },
+  { key: 's', description: 'Shopping lists', action: () => window.location.href = '/shopping-lists.html' },
+  { key: 'c', description: 'Collections', action: () => window.location.href = '/collections.html' },
+  { key: '?', description: 'Show shortcuts', action: () => toggleShortcutsModal() },
+  { key: 'Escape', description: 'Close modal', action: () => closeShortcutsModal() }
+];
+
+function initKeyboardShortcuts() {
+  document.addEventListener('keydown', handleKeyboardShortcut);
+}
+
+function handleKeyboardShortcut(event) {
+  // Don't trigger shortcuts when typing in inputs
+  const activeElement = document.activeElement;
+  const isTyping = activeElement && (
+    activeElement.tagName === 'INPUT' ||
+    activeElement.tagName === 'TEXTAREA' ||
+    activeElement.isContentEditable
+  );
+  
+  // Allow Escape to work even when typing
+  if (event.key === 'Escape') {
+    closeShortcutsModal();
+    closeQuickAddDropdown();
+    activeElement?.blur();
+    return;
+  }
+  
+  // Don't process other shortcuts if typing
+  if (isTyping) return;
+  
+  // Don't process if modifier keys are held (except for Ctrl+K)
+  if (event.altKey || event.metaKey) return;
+  if (event.ctrlKey && event.key !== 'k') return;
+  
+  // Handle Ctrl+K for search
+  if (event.ctrlKey && event.key === 'k') {
+    event.preventDefault();
+    focusSearch();
+    return;
+  }
+  
+  // Find and execute matching shortcut
+  const shortcut = SHORTCUTS.find(s => s.key === event.key);
+  if (shortcut) {
+    event.preventDefault();
+    shortcut.action();
+  }
+}
+
+function focusSearch() {
+  const searchInput = document.getElementById('recipe-search');
+  if (searchInput) {
+    searchInput.focus();
+    searchInput.select();
+  } else {
+    // If not on a page with search, go to recipes page
+    window.location.href = '/recipes.html';
+  }
+}
+
+function toggleShortcutsModal() {
+  const existing = document.getElementById('shortcuts-modal');
+  if (existing) {
+    closeShortcutsModal();
+  } else {
+    showShortcutsModal();
+  }
+}
+
+function showShortcutsModal() {
+  // Don't show if already open
+  if (document.getElementById('shortcuts-modal')) return;
+  
+  const modal = document.createElement('div');
+  modal.id = 'shortcuts-modal';
+  modal.className = 'shortcuts-modal-overlay';
+  modal.onclick = (e) => {
+    if (e.target === modal) closeShortcutsModal();
+  };
+  
+  modal.innerHTML = `
+    <div class="shortcuts-modal">
+      <div class="shortcuts-header">
+        <h2>⌨️ Keyboard Shortcuts</h2>
+        <button class="shortcuts-close" onclick="closeShortcutsModal()">✕</button>
+      </div>
+      <div class="shortcuts-list">
+        ${SHORTCUTS.filter(s => s.key !== 'Escape').map(s => `
+          <div class="shortcut-item">
+            <kbd>${s.key === '/' ? '/ or Ctrl+K' : s.key}</kbd>
+            <span>${s.description}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="shortcuts-footer">
+        Press <kbd>?</kbd> to toggle this help, <kbd>Esc</kbd> to close
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Animate in
+  requestAnimationFrame(() => {
+    modal.classList.add('visible');
+  });
+}
+
+function closeShortcutsModal() {
+  const modal = document.getElementById('shortcuts-modal');
+  if (modal) {
+    modal.classList.remove('visible');
+    setTimeout(() => modal.remove(), 200);
+  }
+}
+
+// Initialize keyboard shortcuts on page load
+document.addEventListener('DOMContentLoaded', initKeyboardShortcuts);
+
+// =====================
 // Toast Notification System
 // =====================
 
