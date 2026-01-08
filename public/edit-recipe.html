@@ -78,11 +78,40 @@
             <small class="form-hint">Optional - link to original recipe for credit</small>
           </div>
 
-          <!-- Image URL -->
+          <!-- Image -->
           <div class="form-group">
-            <label class="form-label" for="image">Image URL</label>
-            <input type="url" class="form-input" id="image" name="image" placeholder="https://example.com/recipe-image.jpg">
-            <small class="form-hint">Optional - link to a recipe image</small>
+            <label class="form-label">Recipe Image</label>
+            <div class="image-upload-container">
+              <div class="image-upload-tabs">
+                <button type="button" class="tab-btn active" data-tab="upload">Upload</button>
+                <button type="button" class="tab-btn" data-tab="url">URL</button>
+              </div>
+              
+              <div class="tab-content active" id="tab-upload">
+                <div class="upload-dropzone" id="upload-dropzone">
+                  <input type="file" id="image-file" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
+                  <div class="dropzone-content">
+                    <span class="dropzone-icon">📷</span>
+                    <span class="dropzone-text">Click or drag image here</span>
+                    <span class="dropzone-hint">JPEG, PNG, GIF, WebP • Max 5MB</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="tab-content" id="tab-url">
+                <input type="url" class="form-input" id="image-url-input" placeholder="https://example.com/recipe-image.jpg">
+              </div>
+              
+              <!-- Preview area -->
+              <div class="image-preview-container hidden" id="image-preview-container">
+                <img src="" alt="Preview" id="image-preview">
+                <button type="button" class="remove-image-btn" id="remove-image-btn">×</button>
+              </div>
+              
+              <!-- Hidden input to store final image URL -->
+              <input type="hidden" id="image" name="image">
+            </div>
+            <small class="form-hint">Optional - add a photo of the finished dish</small>
           </div>
 
           <!-- Ingredients -->
@@ -123,6 +152,7 @@ Add wet ingredients and stir until combined
     const slug = params.get('slug');
     if (slug) {
       setupEditRecipeForm(slug);
+      setupImageUpload();
     } else {
       document.querySelector('.card-body').innerHTML = '<div class="message message-error">No recipe specified. Please select a recipe to edit.</div>';
     }

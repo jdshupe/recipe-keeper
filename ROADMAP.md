@@ -24,49 +24,60 @@
 
 ---
 
-## Release v1.1.0 - Quality of Life (Planned)
+## Release v1.1.0 - Quality of Life ✅ COMPLETE
 
-Target: User convenience improvements, polish, and easy wins.
+All 8 features have been implemented!
 
-### 1. Dark Mode
-**Priority:** High | **Difficulty:** Easy | **Est. Lines:** ~100
+### 1. Dark Mode ✅
+- CSS variables for all colors
+- `.dark-mode` class with toggle button in navbar
+- Saves preference to localStorage
+- Respects system preference (`prefers-color-scheme`)
+- Flash-prevention script to avoid FOUC
 
-**What:** Toggle between light and dark color schemes.
+### 2. Recently Viewed Recipes ✅
+- Tracks last 5 viewed recipes in localStorage
+- Displays on home page with images and links
+- Clear history button
 
-**Why:** 
-- Cook mode already has dark theme - users expect it everywhere
-- Easier on eyes at night
-- Modern app expectation
+### 3. Keyboard Shortcuts (Global) ✅
+- Press `?` to view all shortcuts
+- `H` for home, `R` for recipes, `C` for collections
+- `S` for shopping lists, `A` for add recipe
+- `/` to focus search
 
-**Implementation Plan:**
-- Add CSS variables for all colors in `:root`
-- Create `.dark-mode` class variants
-- Toggle button in navbar
-- Save preference to localStorage
-- Respect system preference (`prefers-color-scheme`)
+### 4. Quick Add to Shopping List ✅
+- 🛒 button on recipe cards and detail page
+- Dropdown to select existing list or create new
+- One-click ingredient adding
+- Toast confirmation
+
+### 5. Duplicate Recipe Detection ✅
+- Checks URL match and title similarity
+- Shows modal with option to proceed or view existing
+- Inline warning on manual add form
+
+### 6. Recipe Image Upload ✅
+- File upload on add/edit forms
+- Drag & drop support
+- Support for JPEG, PNG, GIF, WebP (5MB max)
+- Option to use URL or upload file
+- Preview and remove functionality
+
+### 7. Improved Home Page ✅
+- Quick stats (recipe count, favorites, collections)
+- Recently viewed section
+- Random "Surprise Me!" recipe suggestion
+- Quick actions grid
+
+### 8. Toast Notifications ✅
+- Success, error, and info variants
+- Auto-dismiss after 3.5 seconds
+- Replaced all alert() calls
 
 ---
 
-### 2. Recently Viewed Recipes
-**Priority:** High | **Difficulty:** Easy | **Est. Lines:** ~60
-
-**What:** Show last 5-10 viewed recipes on home page.
-
-**Why:**
-- Quick access to recipes you're actively using
-- Home page currently just shows "recent recipes" by date added
-- Users often return to same recipes repeatedly
-
-**Implementation Plan:**
-- Track views in localStorage (array of slugs + timestamps)
-- Add "Recently Viewed" section to home page
-- Limit to last 10, deduplicate
-- Clear button optional
-
----
-
-### 3. Keyboard Shortcuts (Global)
-**Priority:** Medium | **Difficulty:** Easy | **Est. Lines:** ~80
+## Release v1.2.0 - Future Ideas
 
 **What:** Keyboard shortcuts for common actions across the app.
 

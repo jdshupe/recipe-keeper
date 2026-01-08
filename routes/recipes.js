@@ -1,6 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const { getAllRecipes, getRecipeBySlug, saveRecipe, deleteRecipe, generateSlug, getAllTags, renameTag, deleteTag, getRecipesByTag } = require('../lib/recipes');
+const { getAllRecipes, getRecipeBySlug, saveRecipe, deleteRecipe, generateSlug, getAllTags, renameTag, deleteTag, getRecipesByTag, checkForDuplicates } = require('../lib/recipes');
+
+// POST /api/recipes/check-duplicates - Check for potential duplicate recipes
+router.post('/check-duplicates', async (req, res) => {
+  try {
+    const { title, sourceUrl } = req.body;
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required', success: false });
+    }
+    
+    const duplicates = await checkForDuplicates(title, sourceUrl);
+    res.json({ data: duplicates, success: true });
+  } catch (err) {
+    console.error('Error checking duplicates:', err);
+    res.status(500).json({ error: 'Failed to check for duplicates', success: false });
+  }
+});
 
 // GET /api/tags - Get all unique tags with counts
 router.get('/tags', async (req, res) => {

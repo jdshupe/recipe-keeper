@@ -1441,10 +1441,28 @@ function setupImportForm() {
     if (!url) return;
     
     btn.disabled = true;
-    btn.textContent = 'Importing...';
+    btn.textContent = 'Checking for duplicates...';
     messageDiv.className = 'mt-1 hidden';
     
     try {
+      // First check for duplicates by URL
+      const dupCheck = await api('/recipes/check-duplicates', {
+        method: 'POST',
+        body: { title: '', sourceUrl: url }
+      });
+      
+      if (dupCheck.success && dupCheck.data.length > 0) {
+        // Found potential duplicates
+        const proceed = await showDuplicateWarning(dupCheck.data, url);
+        if (!proceed) {
+          btn.disabled = false;
+          btn.textContent = 'Import Recipe';
+          return;
+        }
+      }
+      
+      btn.textContent = 'Importing...';
+      
       const result = await api('/scrape', {
         method: 'POST',
         body: { url }
@@ -1471,6 +1489,59 @@ function setupImportForm() {
       btn.textContent = 'Import Recipe';
     }
   });
+}
+
+// Duplicate Warning Modal
+function showDuplicateWarning(duplicates, sourceUrl) {
+  return new Promise((resolve) => {
+    const modal = document.createElement('div');
+    modal.className = 'duplicate-modal-overlay';
+    modal.id = 'duplicate-modal';
+    
+    const dup = duplicates[0]; // Show the best match
+    
+    modal.innerHTML = `
+      <div class="duplicate-modal">
+        <div class="duplicate-header">
+          <h2>⚠️ Possible Duplicate Found</h2>
+        </div>
+        <div class="duplicate-content">
+          <p>This recipe may already exist in your collection:</p>
+          <div class="duplicate-recipe">
+            ${dup.image ? `<img src="${dup.image}" alt="${dup.title}">` : '<div class="no-image">🍽️</div>'}
+            <div class="duplicate-info">
+              <strong>${dup.title}</strong>
+              <span class="match-reason">${dup.matchReason}</span>
+            </div>
+          </div>
+        </div>
+        <div class="duplicate-actions">
+          <button class="btn btn-secondary" onclick="closeDuplicateModal(false)">Cancel</button>
+          <a href="/recipe.html?slug=${dup.slug}" class="btn btn-secondary">View Existing</a>
+          <button class="btn btn-primary" onclick="closeDuplicateModal(true)">Import Anyway</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Store resolve function globally for button handlers
+    window._duplicateModalResolve = resolve;
+    
+    requestAnimationFrame(() => modal.classList.add('visible'));
+  });
+}
+
+function closeDuplicateModal(proceed) {
+  const modal = document.getElementById('duplicate-modal');
+  if (modal) {
+    modal.classList.remove('visible');
+    setTimeout(() => modal.remove(), 200);
+  }
+  if (window._duplicateModalResolve) {
+    window._duplicateModalResolve(proceed);
+    window._duplicateModalResolve = null;
+  }
 }
 
 // Shopping List Functions
@@ -1847,6 +1918,35 @@ function setupAddRecipeForm() {
   const form = document.getElementById('add-recipe-form');
   if (!form) return;
 
+  // Track if user has been warned about duplicate
+  let duplicateWarningShown = false;
+  
+  // Check for duplicates when title field loses focus
+  const titleInput = document.getElementById('title');
+  if (titleInput) {
+    titleInput.addEventListener('blur', async () => {
+      const title = titleInput.value.trim();
+      if (!title || duplicateWarningShown) return;
+      
+      const sourceInput = document.getElementById('source');
+      const sourceUrl = sourceInput ? sourceInput.value.trim() : '';
+      
+      try {
+        const dupCheck = await api('/recipes/check-duplicates', {
+          method: 'POST',
+          body: { title, sourceUrl }
+        });
+        
+        if (dupCheck.success && dupCheck.data.length > 0) {
+          duplicateWarningShown = true;
+          showInlineDuplicateWarning(dupCheck.data[0], form);
+        }
+      } catch (err) {
+        // Silently fail - duplicate check is not critical
+      }
+    });
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -1923,6 +2023,30 @@ function setupAddRecipeForm() {
   });
 }
 
+// Show inline duplicate warning for manual add form
+function showInlineDuplicateWarning(dup, form) {
+  // Remove any existing warning
+  const existing = document.querySelector('.inline-duplicate-warning');
+  if (existing) existing.remove();
+  
+  const warning = document.createElement('div');
+  warning.className = 'inline-duplicate-warning';
+  warning.innerHTML = `
+    <div class="warning-content">
+      <strong>⚠️ Possible duplicate:</strong>
+      <a href="/recipe.html?slug=${dup.slug}" target="_blank">${dup.title}</a>
+      <span class="match-badge">${dup.matchReason}</span>
+    </div>
+    <button type="button" class="dismiss-btn" onclick="this.parentElement.remove()">×</button>
+  `;
+  
+  // Insert after the title field
+  const titleGroup = document.getElementById('title').closest('.form-group');
+  if (titleGroup) {
+    titleGroup.insertAdjacentElement('afterend', warning);
+  }
+}
+
 function showFormMessage(element, message, type) {
   element.textContent = message;
   element.className = `mt-1 message message-${type}`;
@@ -1966,6 +2090,11 @@ async function setupEditRecipeForm(slug) {
     
     // Update page title
     document.title = `Edit ${recipe.title} - Recipe Keeper`;
+    
+    // Trigger image upload setup to show existing image
+    // The setupImageUpload function will be called separately and will check hiddenInput.value
+    // Dispatch a custom event to notify that form is ready
+    window.dispatchEvent(new CustomEvent('editFormReady'));
     
   } catch (err) {
     document.querySelector('.card-body').innerHTML = '<div class="message message-error">Failed to load recipe. Please try again.</div>';
@@ -2681,3 +2810,187 @@ function renderRecipeCollectionsSection(recipeSlug, collections) {
   `;
 }
 
+// =====================
+// Image Upload Feature
+// =====================
+
+function setupImageUpload() {
+  const container = document.querySelector('.image-upload-container');
+  if (!container) return;
+
+  const tabBtns = container.querySelectorAll('.tab-btn');
+  const dropzone = document.getElementById('upload-dropzone');
+  const fileInput = document.getElementById('image-file');
+  const urlInput = document.getElementById('image-url-input');
+  const hiddenInput = document.getElementById('image');
+  const previewContainer = document.getElementById('image-preview-container');
+  const previewImg = document.getElementById('image-preview');
+  const removeBtn = document.getElementById('remove-image-btn');
+  
+  // Tab switching
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.dataset.tab;
+      
+      // Update tab buttons
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Show/hide tab content
+      container.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(`tab-${targetTab}`).classList.add('active');
+    });
+  });
+  
+  // Dropzone click
+  if (dropzone) {
+    dropzone.addEventListener('click', () => fileInput.click());
+    
+    // Drag and drop events
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+    
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        handleFileUpload(file);
+      }
+    });
+  }
+  
+  // File input change
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleFileUpload(file);
+      }
+    });
+  }
+  
+  // URL input change (with debounce)
+  if (urlInput) {
+    let urlDebounce;
+    urlInput.addEventListener('input', () => {
+      clearTimeout(urlDebounce);
+      urlDebounce = setTimeout(() => {
+        const url = urlInput.value.trim();
+        if (url) {
+          showImagePreview(url);
+          hiddenInput.value = url;
+        } else {
+          hideImagePreview();
+          hiddenInput.value = '';
+        }
+      }, 500);
+    });
+  }
+  
+  // Remove button
+  if (removeBtn) {
+    removeBtn.addEventListener('click', () => {
+      hideImagePreview();
+      hiddenInput.value = '';
+      if (fileInput) fileInput.value = '';
+      if (urlInput) urlInput.value = '';
+    });
+  }
+  
+  // Function to initialize with existing image
+  function initializeWithExistingImage() {
+    if (hiddenInput.value) {
+      showImagePreview(hiddenInput.value);
+      // If it's a URL (not a local upload), put it in the URL input and switch to that tab
+      if (hiddenInput.value.startsWith('http')) {
+        if (urlInput) urlInput.value = hiddenInput.value;
+        // Switch to URL tab
+        tabBtns.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.tab === 'url');
+        });
+        container.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.toggle('active', content.id === 'tab-url');
+        });
+      }
+    }
+  }
+  
+  // Check if editing an existing recipe - wait for form to be ready
+  window.addEventListener('editFormReady', initializeWithExistingImage);
+  
+  // Also check immediately (for add form or if event already fired)
+  initializeWithExistingImage();
+  
+  async function handleFileUpload(file) {
+    // Validate file size
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image too large. Maximum size is 5MB.', 'error');
+      return;
+    }
+    
+    // Show uploading state
+    dropzone.classList.add('uploading');
+    const dropzoneText = dropzone.querySelector('.dropzone-text');
+    const originalText = dropzoneText.textContent;
+    dropzoneText.textContent = 'Uploading...';
+    
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        hiddenInput.value = result.data.url;
+        showImagePreview(result.data.url);
+        showToast('Image uploaded successfully', 'success');
+      } else {
+        throw new Error(result.error || 'Upload failed');
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to upload image', 'error');
+    } finally {
+      dropzone.classList.remove('uploading');
+      dropzoneText.textContent = originalText;
+    }
+  }
+  
+  function showImagePreview(url) {
+    if (previewImg && previewContainer) {
+      previewImg.src = url;
+      previewContainer.classList.remove('hidden');
+      
+      // Hide the dropzone and URL input when showing preview
+      if (dropzone) dropzone.style.display = 'none';
+      container.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden-with-preview'));
+      container.querySelector('.image-upload-tabs').classList.add('hidden-with-preview');
+    }
+  }
+  
+  function hideImagePreview() {
+    if (previewContainer) {
+      previewContainer.classList.add('hidden');
+      previewImg.src = '';
+      
+      // Show the dropzone and tabs again
+      if (dropzone) dropzone.style.display = '';
+      container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('hidden-with-preview'));
+      container.querySelector('.image-upload-tabs').classList.remove('hidden-with-preview');
+    }
+  }
+}

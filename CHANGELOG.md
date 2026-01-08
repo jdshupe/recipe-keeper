@@ -60,18 +60,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Quick stats (recipe count, favorites, collections)
   - Random recipe suggestion with "Surprise Me!" refresh
   - Quick actions grid for common tasks
+- **Keyboard Shortcuts**: Global navigation shortcuts
+  - Press `?` to view all shortcuts
+  - `H` for home, `R` for recipes, `C` for collections
+  - `S` for shopping lists, `A` for add recipe
+  - `/` to focus search
+- **Duplicate Detection**: Warning when importing/adding similar recipes
+  - Checks URL match and title similarity
+  - Shows modal with option to proceed or view existing
+  - Inline warning on manual add form
+- **Recipe Image Upload**: Upload images directly from your device
+  - Drag & drop or click to select
+  - Support for JPEG, PNG, GIF, WebP (5MB max)
+  - Option to use URL or upload file
+  - Preview and remove functionality
 
 ### Changed
 - Replaced 15 alert() calls with toast notifications
 - Home page redesigned with actionable sections
+- Recipe add/edit forms now have unified image picker (upload or URL)
 
 ---
 
 ## [Unreleased]
 
 ### Planned
-- Duplicate recipe detection on import
-- Keyboard shortcuts
-- Global keyboard shortcuts
+- Additional quality of life improvements
+- Performance optimizations
 
 See [ROADMAP.md](ROADMAP.md) for full details.

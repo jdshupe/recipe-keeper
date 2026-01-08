@@ -5,6 +5,7 @@ const recipesRoutes = require('./routes/recipes');
 const shoppingListRoutes = require('./routes/shopping-lists');
 const scrapeRoutes = require('./routes/scrape');
 const collectionsRoutes = require('./routes/collections');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +19,7 @@ app.use('/api/recipes', recipesRoutes);
 app.use('/api/shopping-lists', shoppingListRoutes);
 app.use('/api/scrape', scrapeRoutes);
 app.use('/api/collections', collectionsRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Serve HTML pages
 app.get('/', (req, res) => {
