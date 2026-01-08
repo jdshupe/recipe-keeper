@@ -119,6 +119,91 @@ function updateDarkModeToggle() {
 initDarkMode();
 
 // =====================
+// Home Page: Quick Stats & Random Suggestion
+// =====================
+
+async function loadQuickStats() {
+  try {
+    // Fetch recipes and collections in parallel
+    const [recipesResult, collectionsResult] = await Promise.all([
+      api('/recipes'),
+      api('/collections')
+    ]);
+
+    // Update recipe count
+    const recipeCount = recipesResult.success ? recipesResult.data.length : 0;
+    const statRecipes = document.getElementById('stat-recipes');
+    if (statRecipes) statRecipes.textContent = recipeCount;
+
+    // Update favorites count
+    const favoritesCount = recipesResult.success 
+      ? recipesResult.data.filter(r => r.favorite).length 
+      : 0;
+    const statFavorites = document.getElementById('stat-favorites');
+    if (statFavorites) statFavorites.textContent = favoritesCount;
+
+    // Update collections count
+    const collectionsCount = collectionsResult.success ? collectionsResult.data.length : 0;
+    const statCollections = document.getElementById('stat-collections');
+    if (statCollections) statCollections.textContent = collectionsCount;
+  } catch (err) {
+    console.error('Error loading quick stats:', err);
+  }
+}
+
+// Cache for random suggestion to avoid re-fetching
+let allRecipesForSuggestion = null;
+
+async function loadRandomSuggestion() {
+  const container = document.getElementById('random-suggestion');
+  if (!container) return;
+
+  container.innerHTML = '<div class="loading"><span class="spinner"></span> Finding a recipe...</div>';
+
+  try {
+    // Fetch recipes if not cached
+    if (!allRecipesForSuggestion) {
+      const result = await api('/recipes');
+      if (!result.success || result.data.length === 0) {
+        container.innerHTML = '<div class="suggestion-empty">No recipes yet. Import your first recipe to get suggestions!</div>';
+        return;
+      }
+      allRecipesForSuggestion = result.data;
+    }
+
+    // Pick a random recipe
+    const randomIndex = Math.floor(Math.random() * allRecipesForSuggestion.length);
+    const recipe = allRecipesForSuggestion[randomIndex];
+
+    container.innerHTML = renderSuggestionCard(recipe);
+  } catch (err) {
+    console.error('Error loading random suggestion:', err);
+    container.innerHTML = '<div class="suggestion-empty">Could not load suggestion. Try again!</div>';
+  }
+}
+
+function renderSuggestionCard(recipe) {
+  const image = recipe.image 
+    ? `<img src="${recipe.image}" alt="${recipe.title}">`
+    : '<div class="no-image">🍽️</div>';
+  
+  return `
+    <a href="/recipe.html?slug=${recipe.slug}" class="suggestion-card">
+      <div class="suggestion-image">${image}</div>
+      <div class="suggestion-info">
+        <h3 class="suggestion-title">${recipe.title}</h3>
+        <p class="suggestion-description">${recipe.description || 'A delicious recipe waiting to be made!'}</p>
+        <div class="suggestion-meta">
+          ${recipe.prepTime ? `<span>⏱️ ${recipe.prepTime}</span>` : ''}
+          ${recipe.cookTime ? `<span>🔥 ${recipe.cookTime}</span>` : ''}
+          ${recipe.servings ? `<span>👥 ${recipe.servings}</span>` : ''}
+        </div>
+      </div>
+    </a>
+  `;
+}
+
+// =====================
 // Recipe Scaling System
 // =====================
 
