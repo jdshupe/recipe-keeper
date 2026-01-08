@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe - Recipe Keeper</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <a href="/" class="logo">🍳 Recipe Keeper</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/recipes.html" class="active">Recipes</a>
+        <a href="/collections.html">Collections</a>
+        <a href="/shopping-lists.html">Shopping Lists</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <a href="/recipes.html" class="back-link">← Back to Recipes</a>
+    
+    <div id="recipe-content">
+      <div class="loading"><span class="spinner"></span> Loading recipe...</div>
+    </div>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('slug');
+    if (slug) {
+      loadRecipe(slug);
+    } else {
+      document.getElementById('recipe-content').innerHTML = '<div class="message message-error">No recipe specified</div>';
+    }
+  </script>
+</body>
+</html>

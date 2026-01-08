@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collection - Recipe Keeper</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <a href="/" class="logo">🍳 Recipe Keeper</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/recipes.html">Recipes</a>
+        <a href="/collections.html" class="active">Collections</a>
+        <a href="/shopping-lists.html">Shopping Lists</a>
+        <a href="/add-recipe.html" class="btn btn-primary btn-small">+ Add Recipe</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <a href="/collections.html" class="back-link">← Back to Collections</a>
+    
+    <div id="collection-content">
+      <div class="loading"><span class="spinner"></span> Loading collection...</div>
+    </div>
+  </main>
+
+  <!-- Edit Collection Modal -->
+  <div id="collection-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeCollectionModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Edit Collection</h2>
+        <button onclick="closeCollectionModal()" class="modal-close">&times;</button>
+      </div>
+      <form id="collection-form" onsubmit="saveCollection(event)">
+        <div class="form-group">
+          <label class="form-label" for="collection-name">Name *</label>
+          <input type="text" class="form-input" id="collection-name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="collection-description">Description (optional)</label>
+          <textarea class="form-input" id="collection-description" rows="3"></textarea>
+        </div>
+        <input type="hidden" id="collection-id">
+        <div class="modal-actions">
+          <button type="button" onclick="closeCollectionModal()" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-collection-btn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const collectionId = params.get('id');
+    if (collectionId) {
+      loadCollection(collectionId);
+    } else {
+      document.getElementById('collection-content').innerHTML = '<div class="message message-error">No collection specified</div>';
+    }
+  </script>
+</body>
+</html>

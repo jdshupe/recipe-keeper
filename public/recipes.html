@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Recipes - Recipe Keeper</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <a href="/" class="logo">🍳 Recipe Keeper</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/recipes.html" class="active">Recipes</a>
+        <a href="/collections.html">Collections</a>
+        <a href="/shopping-lists.html">Shopping Lists</a>
+        <a href="/add-recipe.html" class="btn btn-primary btn-small">+ Add Recipe</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1>All Recipes</h1>
+    
+    <!-- Search & Filter -->
+    <div class="search-bar">
+      <input type="text" class="form-input" id="recipe-search" placeholder="Search recipes by name, ingredient, or tag...">
+    </div>
+    
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('all')">All Recipes</button>
+      <button class="filter-btn" onclick="setFilter('favorites')">★ Favorites</button>
+      <a href="/tags.html" class="filter-btn" style="text-decoration: none;">🏷️ Manage Tags</a>
+    </div>
+    
+    <!-- Tag Filter Section -->
+    <div id="tag-filter-section" class="tag-filter-section">
+      <div class="tag-filter-header">
+        <span class="tag-filter-label">Filter by tag:</span>
+        <button id="clear-tag-filter" class="clear-tag-btn hidden" onclick="clearTagFilter()">✕ Clear</button>
+      </div>
+      <div id="tag-cloud" class="tag-cloud">
+        <span class="loading-tags">Loading tags...</span>
+      </div>
+    </div>
+    
+    <div class="import-form">
+      <h2>Import a Recipe from URL</h2>
+      <form id="import-form">
+        <div class="form-row">
+          <input type="url" class="form-input" id="recipe-url" placeholder="Paste recipe URL here..." required>
+          <button type="submit" class="btn btn-primary" id="import-btn">Import Recipe</button>
+        </div>
+      </form>
+      <div id="import-message" class="mt-1 hidden"></div>
+    </div>
+
+    <div id="recipes-list" class="grid grid-3">
+      <div class="loading"><span class="spinner"></span> Loading recipes...</div>
+    </div>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    loadAllRecipes();
+    loadTagCloud();
+    setupImportForm();
+    setupRecipeSearch();
+    checkUrlTagFilter();
+  </script>
+</body>
+</html>

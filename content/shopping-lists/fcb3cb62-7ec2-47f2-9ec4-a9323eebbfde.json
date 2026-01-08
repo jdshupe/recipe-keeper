@@ -1,0 +1,176 @@
+{
+  "id": "fcb3cb62-7ec2-47f2-9ec4-a9323eebbfde",
+  "name": "Week Meal Prep",
+  "items": [
+    {
+      "id": "7ec7e3c7-ff80-4539-a482-b877a111bd18",
+      "name": "1 unit Pho Stock Concentrate",
+      "recipeTitle": "One-Pot Hoisin Beef Meatball Ramen",
+      "recipeSlug": "one-pot-hoisin-beef-meatball-ramen",
+      "checked": false
+    },
+    {
+      "id": "6f1d4827-f10d-4d2f-8862-0325f42d245b",
+      "name": "2 unit Chicken Stock Concentrate",
+      "recipeTitle": "One-Pot Hoisin Beef Meatball Ramen",
+      "recipeSlug": "one-pot-hoisin-beef-meatball-ramen",
+      "checked": false
+    },
+    {
+      "id": "996f2ddd-34ef-40e8-a098-3f2fee034a1c",
+      "name": "2 tablespoon Hoisin Sauce",
+      "recipeTitle": "One-Pot Hoisin Beef Meatball Ramen",
+      "recipeSlug": "one-pot-hoisin-beef-meatball-ramen",
+      "checked": false
+    },
+    {
+      "id": "95fd63a6-1580-4d5c-9669-6d8b2af91b96",
+      "name": "10 ounce Ground Beef",
+      "recipeTitle": "One-Pot Hoisin Beef Meatball Ramen",
+      "recipeSlug": "one-pot-hoisin-beef-meatball-ramen",
+      "checked": false
+    },
+    {
+      "id": "5409a6f5-cd58-42e4-9b65-c9314f1d8a62",
+      "name": "4 ounce Bok Choy and Napa Cabbage",
+      "recipeTitle": "One-Pot Hoisin Beef Meatball Ramen",
+      "recipeSlug": "one-pot-hoisin-beef-meatball-ramen",
+      "checked": false
+    },
+    {
+      "id": "40996cf4-d498-4655-8814-9f210aa0d3bc",
+      "name": "4.5 ounce Ramen Noodles",
+      "recipeTitle": "One-Pot Hoisin Beef Meatball Ramen",
+      "recipeSlug": "one-pot-hoisin-beef-meatball-ramen",
+      "checked": false
+    },
+    {
+      "id": "07ca2ee2-d182-4f97-a360-094c0d72233b",
+      "name": "1 teaspoon Sriracha",
+      "recipeTitle": "One-Pot Hoisin Beef Meatball Ramen",
+      "recipeSlug": "one-pot-hoisin-beef-meatball-ramen",
+      "checked": false
+    },
+    {
+      "id": "c5ce7d61-8a1e-43a4-8c25-397fbb262ac1",
+      "name": "Salt",
+      "recipeTitle": "One-Pot Hoisin Beef Meatball Ramen",
+      "recipeSlug": "one-pot-hoisin-beef-meatball-ramen",
+      "checked": false
+    },
+    {
+      "id": "393f9474-9a7f-4801-9c83-7e81aaad9ce0",
+      "name": "Pepper",
+      "recipeTitle": "One-Pot Hoisin Beef Meatball Ramen",
+      "recipeSlug": "one-pot-hoisin-beef-meatball-ramen",
+      "checked": false
+    },
+    {
+      "id": "7b3123b3-836b-4d4d-a4e2-8068b09a1f2b",
+      "name": "1 tsp sea salt flakes",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "acc287ce-0e2f-4047-9ce5-11b488fa9c23",
+      "name": "1 tsp onion powder",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "51146917-d8fd-40e0-8efd-dd3667a0c059",
+      "name": "1 tsp garlic powder",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "6552e013-8245-4cf8-8ab9-8e218a89f5b5",
+      "name": "1 tsp sweet paprika",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "51cf0e16-6832-449d-a94d-44ec0efd958c",
+      "name": "1 tsp dried thyme",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "71843626-c9a7-4416-9b02-ab1e56f299d2",
+      "name": "½ tsp freshly cracked black pepper",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "6d8c38fd-919b-4432-aecf-d9900efab0c9",
+      "name": "¼ cup (60 ml) extra-virgin olive oil",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "b00f6730-011b-49cd-80c6-f90ef376d144",
+      "name": "5 boneless chicken thighs (skin on or off, skin-on pictured) (see note 1)",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "c68e88bc-1425-426f-9075-85d3124b4aac",
+      "name": "¼ cup (60 ml) water",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "4a3cac13-4131-413f-8649-39fb2cea7796",
+      "name": "1 onion, finely diced",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "2404cd2d-1000-45df-b5e0-0f499cd67196",
+      "name": "1 tsp freshly minced garlic",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "1723ff27-1de1-46cf-9db0-9065ffb661d2",
+      "name": "1 cup (200 g) jasmine rice",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "588d5ce5-77dd-4913-9bae-d2900c11f414",
+      "name": "1½ cups (375 ml) chicken stock (see note 2 about gluten-free)",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "14c86bff-5a30-44f5-805e-436a2f398934",
+      "name": "Fresh thyme sprigs, to garnish (optional)",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    },
+    {
+      "id": "f03e281b-9678-47b6-bd53-8f400957b8be",
+      "name": "Mixed leaf salad",
+      "recipeTitle": "One-pan Chicken and Garlic Rice",
+      "recipeSlug": "one-pan-chicken-and-garlic-rice",
+      "checked": false
+    }
+  ],
+  "createdAt": "2026-01-08T16:33:34.950Z",
+  "updatedAt": "2026-01-08T16:54:12.572Z"
+}
