@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Collections - Recipe Keeper</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script>
+    // Apply dark mode immediately to prevent flash
+    if (localStorage.getItem('darkMode') === 'true' || 
+        (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
 </head>
 <body>
   <nav>
@@ -17,6 +24,7 @@
         <a href="/shopping-lists.html">Shopping Lists</a>
         <a href="/add-recipe.html" class="btn btn-primary btn-small">+ Add Recipe</a>
       </div>
+      <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
     </div>
   </nav>
 

@@ -9,6 +9,116 @@ async function api(endpoint, options = {}) {
 }
 
 // =====================
+// Toast Notification System
+// =====================
+
+const TOAST_ICONS = {
+  success: '✓',
+  error: '✗',
+  info: 'ℹ'
+};
+
+const TOAST_DURATION = 3500; // 3.5 seconds
+
+function getOrCreateToastContainer() {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  return container;
+}
+
+function showToast(message, type = 'info') {
+  const container = getOrCreateToastContainer();
+  
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  
+  // Create icon
+  const icon = document.createElement('span');
+  icon.className = 'toast-icon';
+  icon.textContent = TOAST_ICONS[type] || TOAST_ICONS.info;
+  
+  // Create message
+  const msg = document.createElement('span');
+  msg.className = 'toast-message';
+  msg.textContent = message;
+  
+  // Assemble toast
+  toast.appendChild(icon);
+  toast.appendChild(msg);
+  
+  // Add click to dismiss
+  toast.addEventListener('click', () => removeToast(toast));
+  
+  // Add to container
+  container.appendChild(toast);
+  
+  // Trigger entrance animation
+  requestAnimationFrame(() => {
+    toast.classList.add('toast-visible');
+  });
+  
+  // Auto-remove after duration
+  setTimeout(() => removeToast(toast), TOAST_DURATION);
+  
+  return toast;
+}
+
+function removeToast(toast) {
+  if (!toast || toast.classList.contains('toast-removing')) return;
+  
+  toast.classList.add('toast-removing');
+  toast.classList.remove('toast-visible');
+  
+  // Remove from DOM after animation
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+  }, 300);
+}
+
+// =====================
+// Dark Mode
+// =====================
+
+function initDarkMode() {
+  // Check saved preference or system preference
+  const saved = localStorage.getItem('darkMode');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  if (saved === 'true' || (saved === null && prefersDark)) {
+    document.documentElement.classList.add('dark-mode');
+  }
+  
+  // Update toggle button state
+  updateDarkModeToggle();
+}
+
+function toggleDarkMode() {
+  const isDark = document.documentElement.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', isDark);
+  updateDarkModeToggle();
+}
+
+function updateDarkModeToggle() {
+  const toggles = document.querySelectorAll('.dark-mode-toggle');
+  const isDark = document.documentElement.classList.contains('dark-mode');
+  toggles.forEach(toggle => {
+    toggle.textContent = isDark ? '☀️' : '🌙';
+    toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  });
+}
+
+// Initialize dark mode immediately
+initDarkMode();
+
+// =====================
 // Recipe Scaling System
 // =====================
 
@@ -340,6 +450,84 @@ async function loadRecentRecipes() {
   } catch (err) {
     container.innerHTML = '<div class="message message-error">Failed to load recipes. Please refresh the page.</div>';
   }
+}
+
+// =====================
+// Recently Viewed Recipes
+// =====================
+
+const RECENTLY_VIEWED_KEY = 'recentlyViewed';
+const MAX_RECENTLY_VIEWED = 10;
+const DISPLAY_RECENTLY_VIEWED = 5;
+
+function trackRecipeView(slug) {
+  try {
+    let recentlyViewed = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || '[]');
+    
+    // Remove existing entry for this slug (to avoid duplicates)
+    recentlyViewed = recentlyViewed.filter(item => item.slug !== slug);
+    
+    // Add new entry at the beginning
+    recentlyViewed.unshift({
+      slug: slug,
+      timestamp: Date.now()
+    });
+    
+    // Limit to MAX_RECENTLY_VIEWED items
+    recentlyViewed = recentlyViewed.slice(0, MAX_RECENTLY_VIEWED);
+    
+    localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(recentlyViewed));
+  } catch (err) {
+    console.error('Error tracking recipe view:', err);
+  }
+}
+
+async function loadRecentlyViewed() {
+  const section = document.getElementById('recently-viewed-section');
+  const container = document.getElementById('recently-viewed');
+  
+  if (!section || !container) return;
+  
+  try {
+    const recentlyViewed = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || '[]');
+    
+    if (recentlyViewed.length === 0) {
+      section.classList.add('hidden');
+      return;
+    }
+    
+    // Get the slugs to display (up to DISPLAY_RECENTLY_VIEWED)
+    const slugsToFetch = recentlyViewed.slice(0, DISPLAY_RECENTLY_VIEWED).map(item => item.slug);
+    
+    // Fetch recipe data for each slug
+    const recipePromises = slugsToFetch.map(slug => api(`/recipes/${slug}`));
+    const results = await Promise.all(recipePromises);
+    
+    // Filter successful results and render
+    const recipes = results
+      .filter(result => result.success)
+      .map(result => result.data);
+    
+    if (recipes.length === 0) {
+      section.classList.add('hidden');
+      return;
+    }
+    
+    container.innerHTML = recipes.map(renderRecipeCard).join('');
+    section.classList.remove('hidden');
+  } catch (err) {
+    console.error('Error loading recently viewed:', err);
+    section.classList.add('hidden');
+  }
+}
+
+function clearRecentlyViewed() {
+  localStorage.removeItem(RECENTLY_VIEWED_KEY);
+  const section = document.getElementById('recently-viewed-section');
+  if (section) {
+    section.classList.add('hidden');
+  }
+  showToast('Recently viewed history cleared', 'success');
 }
 
 async function loadAllRecipes() {
@@ -702,6 +890,9 @@ async function loadRecipe(slug) {
   const recipe = result.data;
   document.title = `${recipe.title} - Recipe Keeper`;
   
+  // Track this recipe view
+  trackRecipeView(slug);
+  
   // Initialize scaling system
   initScaling(recipe);
   
@@ -891,9 +1082,12 @@ async function deleteRecipe(slug) {
   const result = await api(`/recipes/${slug}`, { method: 'DELETE' });
   
   if (result.success) {
-    window.location.href = '/recipes.html';
+    showToast('Recipe deleted successfully', 'success');
+    setTimeout(() => {
+      window.location.href = '/recipes.html';
+    }, 500);
   } else {
-    alert(result.error || 'Failed to delete recipe');
+    showToast(result.error || 'Failed to delete recipe', 'error');
   }
 }
 
@@ -1131,13 +1325,14 @@ async function addCustomItem(listId) {
     
     if (result.success) {
       input.value = '';
+      showToast('Item added to list', 'success');
       loadShoppingList(listId);
     } else {
-      alert(result.error || 'Failed to add item');
+      showToast(result.error || 'Failed to add item', 'error');
     }
   } catch (err) {
     console.error('Failed to add custom item:', err);
-    alert('Failed to add item');
+    showToast('Failed to add item', 'error');
   }
 }
 
@@ -1232,9 +1427,12 @@ async function deleteShoppingList(id) {
   const result = await api(`/shopping-lists/${id}`, { method: 'DELETE' });
   
   if (result.success) {
-    window.location.href = '/shopping-lists.html';
+    showToast('Shopping list deleted', 'success');
+    setTimeout(() => {
+      window.location.href = '/shopping-lists.html';
+    }, 500);
   } else {
-    alert(result.error || 'Failed to delete shopping list');
+    showToast(result.error || 'Failed to delete shopping list', 'error');
   }
 }
 
@@ -1870,7 +2068,7 @@ async function showEditCollectionModal(id) {
   }
   
   if (!collection) {
-    alert('Collection not found');
+    showToast('Collection not found', 'error');
     return;
   }
   
@@ -1897,7 +2095,7 @@ async function saveCollection(event) {
   const btn = document.getElementById('save-collection-btn');
   
   if (!name) {
-    alert('Name is required');
+    showToast('Name is required', 'error');
     return;
   }
   
@@ -1922,6 +2120,7 @@ async function saveCollection(event) {
     
     if (result.success) {
       closeCollectionModal();
+      showToast(id ? 'Collection updated' : 'Collection created', 'success');
       // Reload the appropriate page
       if (currentCollectionId) {
         loadCollection(currentCollectionId);
@@ -1929,10 +2128,10 @@ async function saveCollection(event) {
         loadCollections();
       }
     } else {
-      alert(result.error || 'Failed to save collection');
+      showToast(result.error || 'Failed to save collection', 'error');
     }
   } catch (err) {
-    alert('Failed to save collection. Please try again.');
+    showToast('Failed to save collection. Please try again.', 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = id ? 'Save Changes' : 'Create Collection';
@@ -1952,17 +2151,20 @@ async function deleteCollection(id) {
     const result = await api(`/collections/${id}`, { method: 'DELETE' });
     
     if (result.success) {
+      showToast('Collection deleted', 'success');
       // If we're on the collection detail page, redirect to collections list
       if (currentCollectionId === id) {
-        window.location.href = '/collections.html';
+        setTimeout(() => {
+          window.location.href = '/collections.html';
+        }, 500);
       } else {
         loadCollections();
       }
     } else {
-      alert(result.error || 'Failed to delete collection');
+      showToast(result.error || 'Failed to delete collection', 'error');
     }
   } catch (err) {
-    alert('Failed to delete collection. Please try again.');
+    showToast('Failed to delete collection. Please try again.', 'error');
   }
 }
 
@@ -1976,12 +2178,13 @@ async function removeRecipeFromCollection(collectionId, recipeSlug) {
     });
     
     if (result.success) {
+      showToast('Recipe removed from collection', 'success');
       loadCollection(collectionId);
     } else {
-      alert(result.error || 'Failed to remove recipe');
+      showToast(result.error || 'Failed to remove recipe', 'error');
     }
   } catch (err) {
-    alert('Failed to remove recipe. Please try again.');
+    showToast('Failed to remove recipe. Please try again.', 'error');
   }
 }
 
@@ -2016,7 +2219,7 @@ async function showAddToCollectionModal(recipeSlug) {
   const data = await loadCollectionsForRecipe(recipeSlug);
   
   if (!data) {
-    alert('Failed to load collections');
+    showToast('Failed to load collections', 'error');
     return;
   }
   
@@ -2100,13 +2303,14 @@ async function saveRecipeCollections(recipeSlug) {
     
     if (result.success) {
       closeAddToCollectionModal();
+      showToast('Collections updated', 'success');
       // Update the collections display on the recipe page
       updateRecipeCollectionsDisplay(result.data);
     } else {
-      alert(result.error || 'Failed to update collections');
+      showToast(result.error || 'Failed to update collections', 'error');
     }
   } catch (err) {
-    alert('Failed to update collections. Please try again.');
+    showToast('Failed to update collections. Please try again.', 'error');
   }
 }
 

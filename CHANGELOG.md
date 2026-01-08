@@ -40,14 +40,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-01-08
+
+### Added
+- **Dark Mode**: System-wide dark theme with toggle button in navigation
+  - CSS variables for easy theming
+  - Flash-prevention script to avoid FOUC
+  - Persists preference via localStorage
+- **Toast Notifications**: Non-intrusive feedback replacing alert() dialogs
+  - Success, error, and info variants
+  - Auto-dismiss after 3.5 seconds
+- **Recently Viewed**: Track and display last 5 viewed recipes on home page
+  - Clear history option
+  - Persists via localStorage
+- **Quick Add to Shopping List**: 🛒 button on recipe cards and detail page
+  - Dropdown to select existing list or create new
+  - One-click ingredient adding
+- **Improved Home Page**: 
+  - Quick stats (recipe count, favorites, collections)
+  - Random recipe suggestion with "Surprise Me!" refresh
+  - Quick actions grid for common tasks
+
+### Changed
+- Replaced 15 alert() calls with toast notifications
+- Home page redesigned with actionable sections
+
+---
+
 ## [Unreleased]
 
-### Planned for v1.1.0
-- Dark mode toggle
-- Recently viewed recipes on home page
-- Quick add to shopping list from recipe cards
-- Improved home page with stats and suggestions
-- Toast notifications for better feedback
+### Planned
+- Duplicate recipe detection on import
+- Keyboard shortcuts
 - Global keyboard shortcuts
 
 See [ROADMAP.md](ROADMAP.md) for full details.
