@@ -292,7 +292,22 @@
       align-items: end;
     }
     
-    @media (max-width: 768px) {
+    /* Tablet breakpoint (768px - 1024px) */
+    @media (min-width: 768px) and (max-width: 1024px) {
+      .form-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .form-row-dates {
+        grid-template-columns: 1fr 1fr;
+      }
+      .form-row-dates .btn {
+        grid-column: span 2;
+        justify-self: start;
+      }
+    }
+    
+    /* Mobile breakpoint */
+    @media (max-width: 767px) {
       .form-row, .form-row-dates {
         grid-template-columns: 1fr;
       }
@@ -703,8 +718,9 @@
     .quick-add-btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.5rem;
-      padding: 0.5rem 1rem;
+      padding: 0.625rem 1rem;
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
       border-radius: 20px;
@@ -713,6 +729,11 @@
       color: var(--text-primary);
       transition: all 0.2s;
       white-space: nowrap;
+      min-height: 40px;
+      min-width: auto;
+      box-sizing: border-box;
+      line-height: 1.2;
+      font-family: inherit;
     }
     
     .quick-add-btn:hover {
@@ -729,14 +750,28 @@
     .quick-add-btn .item-count {
       font-size: 0.75rem;
       background: var(--bg-hover);
-      padding: 0.125rem 0.375rem;
+      padding: 0.125rem 0.5rem;
       border-radius: 10px;
       color: var(--text-muted);
+      margin-left: 0.25rem;
     }
     
     .quick-add-btn:hover .item-count {
       background: rgba(255,255,255,0.2);
       color: white;
+    }
+    
+    /* Tablet/Mobile quick-add buttons */
+    @media (max-width: 1024px) {
+      .quick-add-btn {
+        padding: 0.75rem 1.25rem;
+        font-size: 1rem;
+        min-height: 44px;
+      }
+      
+      .quick-add-items {
+        gap: 0.625rem;
+      }
     }
     
     .quick-add-empty {
@@ -2984,6 +3019,17 @@ olive oil"></textarea>
     let scannedProductData = null;
     let availableCameras = [];
     let currentCameraId = null;
+    let useBackFacingMode = false; // For iOS/Safari fallback
+    
+    // Detect iOS/Safari - they have issues with getCameras()
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+    
+    function isSafari() {
+      return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    }
     
     async function openBarcodeScanner() {
       const modal = document.getElementById('barcode-scanner-modal');
@@ -3000,55 +3046,89 @@ olive oil"></textarea>
       document.getElementById('add-scanned-item-btn').classList.add('hidden');
       document.getElementById('manual-barcode').value = '';
       
+      // Check for HTTPS (required on iOS except localhost)
+      const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      const isSecure = location.protocol === 'https:' || isLocalhost;
+      
+      if (!isSecure && (isIOS() || isSafari())) {
+        statusEl.textContent = '🔒 Camera requires HTTPS on iOS/Safari. Use manual barcode entry below, or access this site via HTTPS.';
+        statusEl.className = 'scanner-status error';
+        return;
+      }
+      
       try {
-        // Get available cameras
-        availableCameras = await Html5Qrcode.getCameras();
-        
-        if (availableCameras.length === 0) {
-          throw new Error('No cameras found on this device');
-        }
-        
-        // Populate camera select dropdown
-        const cameraSelect = document.getElementById('camera-select');
-        cameraSelect.innerHTML = availableCameras.map((camera, index) => 
-          `<option value="${camera.id}">${camera.label || `Camera ${index + 1}`}</option>`
-        ).join('');
-        
-        // Show camera select if multiple cameras available
-        if (availableCameras.length > 1) {
-          cameraSelectWrapper.classList.remove('hidden');
-        } else {
+        // For iOS/Safari, use facingMode directly instead of getCameras()
+        // getCameras() often fails or returns empty on iOS
+        if (isIOS() || isSafari()) {
+          console.log('iOS/Safari detected - using facingMode approach');
+          useBackFacingMode = true;
           cameraSelectWrapper.classList.add('hidden');
+          await startScannerWithFacingMode('environment');
+        } else {
+          // Standard approach for other browsers
+          useBackFacingMode = false;
+          
+          // Get available cameras
+          availableCameras = await Html5Qrcode.getCameras();
+          
+          if (availableCameras.length === 0) {
+            // Fallback to facingMode if getCameras returns empty
+            console.log('No cameras from getCameras, trying facingMode');
+            useBackFacingMode = true;
+            cameraSelectWrapper.classList.add('hidden');
+            await startScannerWithFacingMode('environment');
+            return;
+          }
+          
+          // Populate camera select dropdown
+          const cameraSelect = document.getElementById('camera-select');
+          cameraSelect.innerHTML = availableCameras.map((camera, index) => 
+            `<option value="${camera.id}">${camera.label || `Camera ${index + 1}`}</option>`
+          ).join('');
+          
+          // Show camera select if multiple cameras available
+          if (availableCameras.length > 1) {
+            cameraSelectWrapper.classList.remove('hidden');
+          } else {
+            cameraSelectWrapper.classList.add('hidden');
+          }
+          
+          // Prefer back camera on mobile
+          const backCamera = availableCameras.find(cam => 
+            cam.label.toLowerCase().includes('back') || 
+            cam.label.toLowerCase().includes('rear') ||
+            cam.label.toLowerCase().includes('environment')
+          );
+          currentCameraId = backCamera ? backCamera.id : availableCameras[0].id;
+          cameraSelect.value = currentCameraId;
+          
+          await startScanner(currentCameraId);
         }
-        
-        // Prefer back camera on mobile
-        const backCamera = availableCameras.find(cam => 
-          cam.label.toLowerCase().includes('back') || 
-          cam.label.toLowerCase().includes('rear') ||
-          cam.label.toLowerCase().includes('environment')
-        );
-        currentCameraId = backCamera ? backCamera.id : availableCameras[0].id;
-        cameraSelect.value = currentCameraId;
-        
-        await startScanner(currentCameraId);
         
       } catch (err) {
         console.error('Error initializing barcode scanner:', err);
+        
+        // If standard approach fails, try facingMode fallback
+        if (!useBackFacingMode) {
+          console.log('Trying facingMode fallback after error');
+          useBackFacingMode = true;
+          try {
+            await startScannerWithFacingMode('environment');
+            return;
+          } catch (fallbackErr) {
+            console.error('Fallback also failed:', fallbackErr);
+            handleScannerError(fallbackErr);
+            return;
+          }
+        }
+        
         handleScannerError(err);
       }
     }
     
-    async function startScanner(cameraId) {
-      const statusEl = document.getElementById('scanner-status');
-      
-      // Stop existing scanner if running
-      if (html5QrCode && html5QrCode.isScanning) {
-        await html5QrCode.stop();
-      }
-      
-      html5QrCode = new Html5Qrcode('barcode-reader');
-      
-      const config = {
+    // Scanner config shared between both methods
+    function getScannerConfig() {
+      return {
         fps: 10,
         qrbox: { width: 250, height: 150 },
         aspectRatio: 1.5,
@@ -3063,10 +3143,60 @@ olive oil"></textarea>
           Html5QrcodeSupportedFormats.ITF
         ]
       };
+    }
+    
+    // Start scanner using camera ID (standard approach)
+    async function startScanner(cameraId) {
+      const statusEl = document.getElementById('scanner-status');
+      
+      // Stop existing scanner if running
+      if (html5QrCode) {
+        try {
+          if (html5QrCode.isScanning) {
+            await html5QrCode.stop();
+          }
+        } catch (e) {
+          console.log('Error stopping scanner:', e);
+        }
+      }
+      
+      html5QrCode = new Html5Qrcode('barcode-reader');
       
       await html5QrCode.start(
         cameraId,
-        config,
+        getScannerConfig(),
+        onBarcodeScanned,
+        (errorMessage) => {
+          // Ignore QR code not found errors (happens continuously)
+        }
+      );
+      
+      statusEl.textContent = 'Point camera at a barcode...';
+      statusEl.className = 'scanner-status';
+    }
+    
+    // Start scanner using facingMode (for iOS/Safari)
+    async function startScannerWithFacingMode(facingMode) {
+      const statusEl = document.getElementById('scanner-status');
+      
+      // Stop existing scanner if running
+      if (html5QrCode) {
+        try {
+          if (html5QrCode.isScanning) {
+            await html5QrCode.stop();
+          }
+        } catch (e) {
+          console.log('Error stopping scanner:', e);
+        }
+      }
+      
+      html5QrCode = new Html5Qrcode('barcode-reader');
+      
+      // Use facingMode constraint instead of camera ID
+      // This is more reliable on iOS/Safari
+      await html5QrCode.start(
+        { facingMode: facingMode },
+        getScannerConfig(),
         onBarcodeScanned,
         (errorMessage) => {
           // Ignore QR code not found errors (happens continuously)
@@ -3078,13 +3208,21 @@ olive oil"></textarea>
     }
     
     async function switchCamera() {
-      const cameraSelect = document.getElementById('camera-select');
-      currentCameraId = cameraSelect.value;
-      
-      document.getElementById('scanner-status').textContent = 'Switching camera...';
+      const statusEl = document.getElementById('scanner-status');
+      statusEl.textContent = 'Switching camera...';
       
       try {
-        await startScanner(currentCameraId);
+        if (useBackFacingMode) {
+          // Toggle between front and back camera using facingMode
+          const currentFacing = currentCameraId === 'user' ? 'environment' : 'user';
+          currentCameraId = currentFacing;
+          await startScannerWithFacingMode(currentFacing);
+        } else {
+          // Use camera ID from dropdown
+          const cameraSelect = document.getElementById('camera-select');
+          currentCameraId = cameraSelect.value;
+          await startScanner(currentCameraId);
+        }
       } catch (err) {
         handleScannerError(err);
       }
@@ -3094,14 +3232,22 @@ olive oil"></textarea>
       const statusEl = document.getElementById('scanner-status');
       let message = 'Unable to access camera.';
       
-      if (err.name === 'NotAllowedError' || err.message.includes('Permission')) {
-        message = '📵 Camera access denied. Please allow camera access in your browser settings and try again.';
-      } else if (err.name === 'NotFoundError' || err.message.includes('No cameras')) {
-        message = '📵 No camera found. Please connect a camera or use manual barcode entry below.';
-      } else if (err.name === 'NotReadableError') {
-        message = '📵 Camera is in use by another application. Please close other apps using the camera.';
+      const errMsg = err.message || err.toString();
+      
+      if (err.name === 'NotAllowedError' || errMsg.includes('Permission') || errMsg.includes('denied')) {
+        if (isIOS()) {
+          message = '📵 Camera access denied. On iPad/iPhone: Go to Settings > Safari > Camera and allow access, then reload this page.';
+        } else {
+          message = '📵 Camera access denied. Please allow camera access in your browser settings and reload the page.';
+        }
+      } else if (err.name === 'NotFoundError' || errMsg.includes('No cameras') || errMsg.includes('Requested device not found')) {
+        message = '📵 No camera found. Please use a device with a camera, or use manual barcode entry below.';
+      } else if (err.name === 'NotReadableError' || errMsg.includes('Could not start')) {
+        message = '📵 Camera is in use by another app. Please close other apps using the camera and try again.';
+      } else if (errMsg.includes('NotSupportedError') || errMsg.includes('HTTPS')) {
+        message = '🔒 Camera requires a secure connection (HTTPS). Use manual barcode entry below.';
       } else {
-        message = `📵 Camera error: ${err.message}. Try manual barcode entry below.`;
+        message = `📵 Camera error: ${errMsg}. Try manual barcode entry below.`;
       }
       
       statusEl.textContent = message;
