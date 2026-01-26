@@ -242,18 +242,18 @@
     
     .ingredient-suggestions {
       position: absolute;
-      top: 100%;
+      bottom: 100%;
       left: 0;
       right: 0;
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 8px;
       box-shadow: var(--shadow-lg);
-      max-height: 150px;
+      max-height: 200px;
       overflow-y: auto;
       z-index: 100;
       display: none;
-      margin-top: 4px;
+      margin-bottom: 4px;
     }
     
     .ingredient-suggestions.visible {
@@ -315,9 +315,6 @@
       margin-top: 1rem;
       padding-top: 1rem;
       border-top: 1px solid var(--border-color);
-      position: relative;
-      z-index: 101;
-      background: var(--bg-card);
     }
     
     .picker-actions .btn {
