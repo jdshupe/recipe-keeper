@@ -5,6 +5,49 @@ All notable changes to Recipe Keeper will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-01-26
+
+### Added
+- **Unified Ingredient Database**: All features now use the same ingredient system
+  - Recipe ingredients link to ingredient database by ID (not just text)
+  - Pantry, shopping lists, and recipes all share the same data
+  - More accurate "What Can I Make?" matching via ingredient IDs
+  
+- **Ingredient Picker for Recipes**: Better ingredient management when editing
+  - Visual match status indicators (green=exact, yellow=partial, gray=unlinked)
+  - Search and link ingredients to database
+  - Create new ingredients inline if not found
+  - Leave ingredients unlinked if preferred (backward compatible)
+  - Keyboard navigation support (arrow keys, Enter, Escape)
+  
+- **Auto-Matching on Import**: Scraped recipes get matched automatically
+  - When importing from URL, ingredients are auto-matched to database
+  - Shows confidence level (exact/high/medium/low/none)
+  - Easy to fix incorrect matches in edit mode
+  
+- **Enriched Recipe Display**: More info on recipe page
+  - Allergen warning banner when recipe contains allergens
+  - Dietary badges (vegetarian, vegan, gluten-free, etc.)
+  - Category icons for each ingredient
+  - Substitution hints on hover/click
+  
+- **Migration Tools**: Convert old recipes to new format
+  - `POST /api/recipes/migrate-all` - Migrate all recipes
+  - `POST /api/recipes/:slug/migrate-ingredients` - Migrate single recipe
+  - `POST /api/recipes/:slug/update-ingredient` - Fix ingredient links
+  - `scripts/migrate-ingredients.js` - Command-line migration
+
+### Changed
+- Recipe ingredients storage format now includes:
+  - `ingredientId` - Links to ingredients.json (null if unlinked)
+  - `originalText` - The display text
+  - `quantity`, `unit`, `name`, `preparation` - Parsed fields
+  - `matchConfidence` - How confident the auto-match was
+
+### Fixed
+- "What Can I Make?" now uses proper ID matching for linked ingredients
+- Fallback to text matching for unlinked ingredients (backward compatible)
+
 ## [1.3.0] - 2026-01-26
 
 ### Added
