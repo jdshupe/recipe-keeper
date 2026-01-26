@@ -715,7 +715,8 @@
       gap: 0.5rem;
     }
     
-    .quick-add-btn {
+    /* Renamed to avoid conflict with global .quick-add-btn in style.css */
+    .pantry-quick-add-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -736,18 +737,18 @@
       font-family: inherit;
     }
     
-    .quick-add-btn:hover {
+    .pantry-quick-add-btn:hover {
       background: var(--accent-primary);
       color: white;
       border-color: var(--accent-primary);
       transform: translateY(-1px);
     }
     
-    .quick-add-btn:active {
+    .pantry-quick-add-btn:active {
       transform: translateY(0);
     }
     
-    .quick-add-btn .item-count {
+    .pantry-quick-add-btn .item-count {
       font-size: 0.75rem;
       background: var(--bg-hover);
       padding: 0.125rem 0.5rem;
@@ -756,14 +757,14 @@
       margin-left: 0.25rem;
     }
     
-    .quick-add-btn:hover .item-count {
+    .pantry-quick-add-btn:hover .item-count {
       background: rgba(255,255,255,0.2);
       color: white;
     }
     
     /* Tablet/Mobile quick-add buttons */
     @media (max-width: 1024px) {
-      .quick-add-btn {
+      .pantry-quick-add-btn {
         padding: 0.75rem 1.25rem;
         font-size: 1rem;
         min-height: 44px;
@@ -2537,7 +2538,7 @@ olive oil"></textarea>
         
         section.style.display = 'block';
         container.innerHTML = items.map(item => `
-          <button class="quick-add-btn" onclick="quickAddItem('${escapeHtml(item.ingredientName)}', '${escapeHtml(item.lastUnit || '')}', '${escapeHtml(item.lastLocation || 'pantry')}')">
+          <button class="pantry-quick-add-btn" onclick="quickAddItem('${escapeHtml(item.ingredientName)}', '${escapeHtml(item.lastUnit || '')}', '${escapeHtml(item.lastLocation || 'pantry')}')">
             ${escapeHtml(item.ingredientName)}
             <span class="item-count">${item.count}×</span>
           </button>
@@ -2563,7 +2564,7 @@ olive oil"></textarea>
         
         section.style.display = 'block';
         container.innerHTML = items.map(item => `
-          <button class="quick-add-btn" onclick="quickAddItem('${escapeHtml(item.ingredientName)}', '${escapeHtml(item.unit || '')}', '${escapeHtml(item.location || 'pantry')}')">
+          <button class="pantry-quick-add-btn" onclick="quickAddItem('${escapeHtml(item.ingredientName)}', '${escapeHtml(item.unit || '')}', '${escapeHtml(item.location || 'pantry')}')">
             ${escapeHtml(item.ingredientName)}
           </button>
         `).join('');
@@ -2576,7 +2577,7 @@ olive oil"></textarea>
     function loadStapleItems() {
       const container = document.getElementById('staple-items');
       container.innerHTML = COMMON_STAPLES.map(item => `
-        <button class="quick-add-btn" onclick="quickAddItem('${escapeHtml(item.name)}', '${item.unit}', '${item.location}', ${item.quantity || 1})">
+        <button class="pantry-quick-add-btn" onclick="quickAddItem('${escapeHtml(item.name)}', '${item.unit}', '${item.location}', ${item.quantity || 1})">
           ${escapeHtml(item.name)}
         </button>
       `).join('');
