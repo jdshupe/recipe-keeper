@@ -18,15 +18,69 @@ source: >-
 image: >-
   https://img.hellofresh.com/f_auto,fl_lossy,h_640,q_auto,w_1200/hellofresh_s3/image/67045d72dcc348117ff3a815-86c9f6ce.jpeg
 ingredients:
-  - 1 unit Pho Stock Concentrate
-  - 2 unit Chicken Stock Concentrate
-  - 2 tablespoon Hoisin Sauce
-  - 10 ounce Ground Beef
-  - 4 ounce Bok Choy and Napa Cabbage
-  - 4.5 ounce Ramen Noodles
-  - 1 teaspoon Sriracha
-  - Salt
-  - Pepper
+  - ingredientId: null
+    originalText: 1 unit Pho Stock Concentrate
+    quantity: 1
+    unit: null
+    name: unit Pho Stock Concentrate
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 2 unit Chicken Stock Concentrate
+    quantity: 2
+    unit: null
+    name: unit Chicken Stock Concentrate
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 2 tablespoon Hoisin Sauce
+    quantity: 2
+    unit: tbsp
+    name: Hoisin Sauce
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 10 ounce Ground Beef
+    quantity: 10
+    unit: oz
+    name: Ground Beef
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 4 ounce Bok Choy and Napa Cabbage
+    quantity: 4
+    unit: oz
+    name: Bok Choy and Napa Cabbage
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 4.5 ounce Ramen Noodles
+    quantity: 4.5
+    unit: oz
+    name: Ramen Noodles
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 1 teaspoon Sriracha
+    quantity: 1
+    unit: tsp
+    name: Sriracha
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: Salt
+    quantity: null
+    unit: null
+    name: Salt
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: Pepper
+    quantity: null
+    unit: null
+    name: Pepper
+    preparation: null
+    matchConfidence: none
 instructions:
   - • Wash and dry produce.
   - '• In a medium pot (large pot for 4 servings), combine pho'

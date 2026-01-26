@@ -12,6 +12,295 @@
       document.documentElement.classList.add('dark-mode');
     }
   </script>
+  <style>
+    /* Ingredient Match Status Indicators */
+    .ingredient-match-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.875rem;
+      flex-shrink: 0;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    
+    .ingredient-match-status:hover {
+      transform: scale(1.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .match-exact {
+      background: #22c55e;
+      color: white;
+    }
+    
+    .match-high {
+      background: #84cc16;
+      color: white;
+    }
+    
+    .match-medium {
+      background: #eab308;
+      color: white;
+    }
+    
+    .match-low {
+      background: #94a3b8;
+      color: white;
+    }
+    
+    .match-none {
+      background: #e2e8f0;
+      color: #64748b;
+      border: 2px dashed #94a3b8;
+    }
+    
+    /* Dark mode adjustments */
+    .dark-mode .match-none {
+      background: #334155;
+      color: #94a3b8;
+      border-color: #475569;
+    }
+    
+    /* Structured Ingredients List */
+    .structured-ingredients-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .ingredient-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      transition: border-color 0.15s;
+    }
+    
+    .ingredient-row:hover {
+      border-color: var(--primary-color);
+    }
+    
+    .ingredient-row .drag-handle {
+      cursor: grab;
+      color: var(--text-muted);
+      padding: 0.25rem;
+    }
+    
+    .ingredient-row .drag-handle:active {
+      cursor: grabbing;
+    }
+    
+    .ingredient-text-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 1rem;
+      color: var(--text-color);
+      padding: 0.25rem 0;
+      outline: none;
+    }
+    
+    .ingredient-text-input:focus {
+      border-bottom: 2px solid var(--primary-color);
+    }
+    
+    .ingredient-delete-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem;
+      font-size: 1.25rem;
+      opacity: 0.6;
+      transition: opacity 0.15s, color 0.15s;
+    }
+    
+    .ingredient-delete-btn:hover {
+      opacity: 1;
+      color: var(--danger-color);
+    }
+    
+    .add-ingredient-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: transparent;
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 100%;
+      justify-content: center;
+      font-size: 0.9rem;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    
+    .add-ingredient-btn:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+    
+    /* Ingredient Picker Modal */
+    .ingredient-picker-modal .modal-content {
+      max-width: 500px;
+    }
+    
+    .ingredient-picker-modal .modal-body {
+      padding: 1.5rem;
+    }
+    
+    .ingredient-search-container {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    
+    .ingredient-search-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--text-color);
+    }
+    
+    .ingredient-search-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+    
+    .ingredient-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-height: 250px;
+      overflow-y: auto;
+      z-index: 10;
+      display: none;
+    }
+    
+    .ingredient-suggestions.visible {
+      display: block;
+    }
+    
+    .ingredient-suggestion {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .ingredient-suggestion:last-child {
+      border-bottom: none;
+    }
+    
+    .ingredient-suggestion:hover {
+      background: var(--primary-light);
+    }
+    
+    .ingredient-suggestion.selected {
+      background: var(--primary-light);
+    }
+    
+    .ingredient-suggestion-name {
+      font-weight: 500;
+    }
+    
+    .ingredient-suggestion-category {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: capitalize;
+    }
+    
+    .no-results-message {
+      padding: 1rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    
+    .picker-current-ingredient {
+      background: var(--primary-light);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    
+    .picker-current-ingredient strong {
+      color: var(--primary-color);
+    }
+    
+    .picker-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .picker-actions .btn {
+      justify-content: center;
+    }
+    
+    /* Match confidence tooltip */
+    .match-tooltip {
+      position: relative;
+    }
+    
+    .match-tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.5rem 0.75rem;
+      background: #1e293b;
+      color: white;
+      font-size: 0.75rem;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+      z-index: 100;
+    }
+    
+    .match-tooltip:hover::after {
+      opacity: 1;
+    }
+    
+    .dark-mode .match-tooltip::after {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+    
+    /* Ingredient linked badge */
+    .ingredient-linked-name {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-left: 0.5rem;
+      background: var(--primary-light);
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
   <nav>
@@ -42,6 +331,8 @@
         <form id="edit-recipe-form">
           <!-- Hidden field for original slug -->
           <input type="hidden" id="originalSlug" name="originalSlug">
+          <!-- Hidden field to store structured ingredients JSON -->
+          <input type="hidden" id="ingredients-data" name="ingredientsData">
           
           <!-- Title (required) -->
           <div class="form-group">
@@ -123,12 +414,14 @@
 
           <!-- Ingredients -->
           <div class="form-group">
-            <label class="form-label" for="ingredients">Ingredients <span class="required">*</span></label>
-            <textarea class="form-input" id="ingredients" name="ingredients" rows="8" required placeholder="1 cup flour
-2 eggs
-1/2 cup sugar
-..."></textarea>
-            <small class="form-hint">Enter one ingredient per line</small>
+            <label class="form-label">Ingredients <span class="required">*</span></label>
+            <div id="structured-ingredients" class="structured-ingredients-list">
+              <!-- Ingredient rows will be dynamically added here -->
+            </div>
+            <button type="button" class="add-ingredient-btn" id="add-ingredient-btn">
+              <span>+</span> Add Ingredient
+            </button>
+            <small class="form-hint">Click the status indicator to link ingredients to the database</small>
           </div>
 
           <!-- Instructions -->
@@ -153,15 +446,681 @@ Add wet ingredients and stir until combined
     </div>
   </main>
 
+  <!-- Ingredient Picker Modal -->
+  <div class="modal hidden ingredient-picker-modal" id="ingredient-picker-modal">
+    <div class="modal-backdrop" onclick="closeIngredientPicker()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Link Ingredient</h2>
+        <button type="button" class="modal-close" onclick="closeIngredientPicker()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="picker-current-ingredient" id="picker-current-ingredient">
+          Linking: <strong id="picker-ingredient-text"></strong>
+        </div>
+        <div class="ingredient-search-container">
+          <input type="text" 
+                 class="ingredient-search-input" 
+                 id="ingredient-search-input" 
+                 placeholder="Search ingredients..."
+                 autocomplete="off">
+          <div class="ingredient-suggestions" id="ingredient-suggestions">
+            <!-- Suggestions will be populated dynamically -->
+          </div>
+        </div>
+        <div class="picker-actions">
+          <button type="button" class="btn btn-secondary" onclick="createNewIngredient()">
+            ✨ Create New Ingredient
+          </button>
+          <button type="button" class="btn btn-outline" onclick="leaveUnlinked()">
+            🔗 Leave Unlinked
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Ingredient Modal -->
+  <div class="modal hidden" id="create-ingredient-modal">
+    <div class="modal-backdrop" onclick="closeCreateIngredientModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Create New Ingredient</h2>
+        <button type="button" class="modal-close" onclick="closeCreateIngredientModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="create-ingredient-form">
+          <div class="form-group">
+            <label class="form-label" for="new-ingredient-name">Ingredient Name <span class="required">*</span></label>
+            <input type="text" class="form-input" id="new-ingredient-name" required placeholder="e.g., chicken breast">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-ingredient-category">Category</label>
+            <select class="form-input" id="new-ingredient-category">
+              <option value="">Auto-detect</option>
+              <option value="produce">Produce</option>
+              <option value="meat">Meat</option>
+              <option value="poultry">Poultry</option>
+              <option value="seafood">Seafood</option>
+              <option value="dairy">Dairy</option>
+              <option value="bakery">Bakery</option>
+              <option value="pantry">Pantry</option>
+              <option value="frozen">Frozen</option>
+              <option value="canned">Canned Goods</option>
+              <option value="condiments">Condiments</option>
+              <option value="spices">Spices & Seasonings</option>
+              <option value="beverages">Beverages</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-ingredient-aliases">Aliases</label>
+            <input type="text" class="form-input" id="new-ingredient-aliases" placeholder="e.g., chicken, boneless chicken (comma separated)">
+            <small class="form-hint">Alternative names for this ingredient</small>
+          </div>
+        </form>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="closeCreateIngredientModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="submitNewIngredient()">Create & Link</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/app.js"></script>
   <script>
+    // ==========================================
+    // Structured Ingredients State
+    // ==========================================
+    let structuredIngredients = [];
+    let currentEditingIndex = null;
+    let searchTimeout = null;
+    let selectedSuggestionIndex = -1;
+    
+    // ==========================================
+    // Initialize Edit Recipe Form
+    // ==========================================
     const params = new URLSearchParams(window.location.search);
     const slug = params.get('slug');
     if (slug) {
-      setupEditRecipeForm(slug);
+      setupEditRecipeFormStructured(slug);
       setupImageUpload();
     } else {
       document.querySelector('.card-body').innerHTML = '<div class="message message-error">No recipe specified. Please select a recipe to edit.</div>';
+    }
+    
+    // ==========================================
+    // Modified Edit Recipe Setup
+    // ==========================================
+    async function setupEditRecipeFormStructured(slug) {
+      const form = document.getElementById('edit-recipe-form');
+      const cancelBtn = document.getElementById('cancel-btn');
+      
+      if (!form) return;
+      
+      // Update cancel button to go back to the recipe
+      cancelBtn.href = `/recipe.html?slug=${slug}`;
+      
+      // Fetch the recipe data
+      try {
+        const result = await api(`/recipes/${slug}`);
+        
+        if (!result.success) {
+          document.querySelector('.card-body').innerHTML = `<div class="message message-error">${result.error || 'Recipe not found'}</div>`;
+          return;
+        }
+        
+        const recipe = result.data;
+        
+        // Pre-populate form fields
+        document.getElementById('originalSlug').value = slug;
+        document.getElementById('title').value = recipe.title || '';
+        document.getElementById('description').value = recipe.description || '';
+        document.getElementById('prepTime').value = recipe.prepTime || '';
+        document.getElementById('cookTime').value = recipe.cookTime || '';
+        document.getElementById('servings').value = recipe.servings || '';
+        document.getElementById('tags').value = (recipe.tags || []).join(', ');
+        document.getElementById('source').value = recipe.source || '';
+        document.getElementById('image').value = recipe.image || '';
+        
+        // Handle structured ingredients
+        loadStructuredIngredients(recipe.ingredients || []);
+        
+        // Convert instructions array to one-per-line format
+        document.getElementById('instructions').value = (recipe.instructions || []).join('\n');
+        
+        // Update page title
+        document.title = `Edit ${recipe.title} - Recipe Keeper`;
+        
+        // Dispatch event to notify form is ready
+        window.dispatchEvent(new CustomEvent('editFormReady'));
+        
+      } catch (err) {
+        document.querySelector('.card-body').innerHTML = '<div class="message message-error">Failed to load recipe. Please try again.</div>';
+        return;
+      }
+      
+      // Handle form submission
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const btn = document.getElementById('save-btn');
+        const messageDiv = document.getElementById('form-message');
+        const originalSlug = document.getElementById('originalSlug').value;
+        
+        // Get form values
+        const title = document.getElementById('title').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const prepTime = document.getElementById('prepTime').value.trim();
+        const cookTime = document.getElementById('cookTime').value.trim();
+        const servings = document.getElementById('servings').value.trim();
+        const tagsInput = document.getElementById('tags').value.trim();
+        const source = document.getElementById('source').value.trim();
+        const image = document.getElementById('image').value.trim();
+        const instructionsText = document.getElementById('instructions').value.trim();
+        
+        // Client-side validation
+        if (!title) {
+          showFormMessage(messageDiv, 'Please enter a recipe title.', 'error');
+          return;
+        }
+        
+        // Update structured ingredients from UI
+        updateStructuredIngredientsFromUI();
+        
+        if (structuredIngredients.length === 0) {
+          showFormMessage(messageDiv, 'Please enter at least one ingredient.', 'error');
+          return;
+        }
+        
+        if (!instructionsText) {
+          showFormMessage(messageDiv, 'Please enter at least one instruction.', 'error');
+          return;
+        }
+        
+        // Parse instructions (one per line)
+        const instructions = instructionsText.split('\n').map(line => line.trim()).filter(Boolean);
+        
+        // Parse tags (comma separated)
+        const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim()).filter(Boolean) : [];
+        
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        messageDiv.className = 'mt-1 hidden';
+        
+        try {
+          const result = await api(`/recipes/${originalSlug}`, {
+            method: 'PUT',
+            body: {
+              title,
+              description,
+              prepTime,
+              cookTime,
+              servings,
+              tags,
+              source,
+              image,
+              ingredients: structuredIngredients,
+              instructions
+            }
+          });
+          
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to save recipe');
+          }
+          
+          // Redirect to the recipe page (use new slug in case title changed)
+          window.location.href = `/recipe.html?slug=${result.data.slug}`;
+        } catch (err) {
+          showFormMessage(messageDiv, err.message || 'Failed to save recipe. Please try again.', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Save Changes';
+        }
+      });
+      
+      // Setup add ingredient button
+      document.getElementById('add-ingredient-btn').addEventListener('click', () => {
+        addIngredientRow({ originalText: '', matchConfidence: 'none' });
+        // Focus the new input
+        const rows = document.querySelectorAll('.ingredient-row');
+        const lastRow = rows[rows.length - 1];
+        if (lastRow) {
+          lastRow.querySelector('.ingredient-text-input').focus();
+        }
+      });
+      
+      // Setup ingredient search
+      setupIngredientSearch();
+    }
+    
+    // ==========================================
+    // Load Structured Ingredients
+    // ==========================================
+    function loadStructuredIngredients(ingredients) {
+      structuredIngredients = [];
+      const container = document.getElementById('structured-ingredients');
+      container.innerHTML = '';
+      
+      ingredients.forEach((ing, index) => {
+        // Handle both old format (strings) and new format (objects)
+        if (typeof ing === 'string') {
+          // Old format - just a string
+          const ingredientData = {
+            originalText: ing,
+            ingredientId: null,
+            matchConfidence: 'none',
+            quantity: null,
+            unit: null,
+            name: null,
+            preparation: null
+          };
+          structuredIngredients.push(ingredientData);
+          addIngredientRow(ingredientData, index);
+        } else {
+          // New format - structured object
+          const ingredientData = {
+            originalText: ing.originalText || ing.text || '',
+            ingredientId: ing.ingredientId || null,
+            matchConfidence: ing.matchConfidence || 'none',
+            quantity: ing.quantity || null,
+            unit: ing.unit || null,
+            name: ing.name || null,
+            preparation: ing.preparation || null,
+            linkedName: ing.linkedName || null
+          };
+          structuredIngredients.push(ingredientData);
+          addIngredientRow(ingredientData, index);
+        }
+      });
+      
+      // If no ingredients, add one empty row
+      if (structuredIngredients.length === 0) {
+        addIngredientRow({ originalText: '', matchConfidence: 'none' });
+      }
+    }
+    
+    // ==========================================
+    // Add Ingredient Row
+    // ==========================================
+    function addIngredientRow(ingredientData, index = null) {
+      if (index === null) {
+        index = structuredIngredients.length;
+        structuredIngredients.push({
+          originalText: ingredientData.originalText || '',
+          ingredientId: ingredientData.ingredientId || null,
+          matchConfidence: ingredientData.matchConfidence || 'none',
+          quantity: ingredientData.quantity || null,
+          unit: ingredientData.unit || null,
+          name: ingredientData.name || null,
+          preparation: ingredientData.preparation || null,
+          linkedName: ingredientData.linkedName || null
+        });
+      }
+      
+      const container = document.getElementById('structured-ingredients');
+      const row = document.createElement('div');
+      row.className = 'ingredient-row';
+      row.dataset.index = index;
+      
+      const matchClass = getMatchClass(ingredientData.matchConfidence);
+      const matchIcon = getMatchIcon(ingredientData.matchConfidence);
+      const matchTooltip = getMatchTooltip(ingredientData.matchConfidence, ingredientData.linkedName);
+      
+      row.innerHTML = `
+        <span class="drag-handle">☰</span>
+        <span class="ingredient-match-status ${matchClass} match-tooltip" 
+              data-tooltip="${matchTooltip}"
+              onclick="openIngredientPicker(${index})">
+          ${matchIcon}
+        </span>
+        <input type="text" 
+               class="ingredient-text-input" 
+               value="${escapeHtml(ingredientData.originalText)}"
+               placeholder="Enter ingredient..."
+               data-index="${index}">
+        ${ingredientData.linkedName ? `<span class="ingredient-linked-name">→ ${escapeHtml(ingredientData.linkedName)}</span>` : ''}
+        <button type="button" class="ingredient-delete-btn" onclick="deleteIngredientRow(${index})">×</button>
+      `;
+      
+      container.appendChild(row);
+    }
+    
+    // ==========================================
+    // Match Status Helpers
+    // ==========================================
+    function getMatchClass(confidence) {
+      switch (confidence) {
+        case 'exact': return 'match-exact';
+        case 'high': return 'match-high';
+        case 'medium': return 'match-medium';
+        case 'low': return 'match-low';
+        default: return 'match-none';
+      }
+    }
+    
+    function getMatchIcon(confidence) {
+      switch (confidence) {
+        case 'exact': return '✓';
+        case 'high': return '✓';
+        case 'medium': return '~';
+        case 'low': return '?';
+        default: return '○';
+      }
+    }
+    
+    function getMatchTooltip(confidence, linkedName) {
+      if (linkedName) {
+        switch (confidence) {
+          case 'exact': return `Exact match: ${linkedName}`;
+          case 'high': return `High confidence: ${linkedName}`;
+          case 'medium': return `Medium confidence: ${linkedName}`;
+          case 'low': return `Low confidence: ${linkedName}`;
+          default: return 'Not linked';
+        }
+      }
+      return 'Click to link ingredient';
+    }
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+    }
+    
+    // ==========================================
+    // Delete Ingredient Row
+    // ==========================================
+    function deleteIngredientRow(index) {
+      const row = document.querySelector(`.ingredient-row[data-index="${index}"]`);
+      if (row) {
+        row.remove();
+        // Don't remove from array yet, just mark as deleted
+        structuredIngredients[index] = null;
+      }
+    }
+    
+    // ==========================================
+    // Update Structured Ingredients from UI
+    // ==========================================
+    function updateStructuredIngredientsFromUI() {
+      const rows = document.querySelectorAll('.ingredient-row');
+      const updatedIngredients = [];
+      
+      rows.forEach(row => {
+        const index = parseInt(row.dataset.index);
+        const input = row.querySelector('.ingredient-text-input');
+        const text = input.value.trim();
+        
+        if (text && structuredIngredients[index]) {
+          const ing = structuredIngredients[index];
+          ing.originalText = text;
+          updatedIngredients.push(ing);
+        } else if (text) {
+          // New ingredient without existing data
+          updatedIngredients.push({
+            originalText: text,
+            ingredientId: null,
+            matchConfidence: 'none'
+          });
+        }
+      });
+      
+      structuredIngredients = updatedIngredients;
+    }
+    
+    // ==========================================
+    // Ingredient Picker Modal
+    // ==========================================
+    function openIngredientPicker(index) {
+      currentEditingIndex = index;
+      const ingredient = structuredIngredients[index];
+      
+      if (!ingredient) return;
+      
+      document.getElementById('picker-ingredient-text').textContent = ingredient.originalText || 'New ingredient';
+      document.getElementById('ingredient-search-input').value = ingredient.name || ingredient.originalText || '';
+      document.getElementById('ingredient-suggestions').innerHTML = '';
+      document.getElementById('ingredient-suggestions').classList.remove('visible');
+      
+      document.getElementById('ingredient-picker-modal').classList.remove('hidden');
+      
+      // Focus search input
+      setTimeout(() => {
+        document.getElementById('ingredient-search-input').focus();
+        // Trigger search if there's text
+        const searchInput = document.getElementById('ingredient-search-input');
+        if (searchInput.value) {
+          searchIngredients(searchInput.value);
+        }
+      }, 100);
+    }
+    
+    function closeIngredientPicker() {
+      document.getElementById('ingredient-picker-modal').classList.add('hidden');
+      currentEditingIndex = null;
+      selectedSuggestionIndex = -1;
+    }
+    
+    // ==========================================
+    // Ingredient Search
+    // ==========================================
+    function setupIngredientSearch() {
+      const searchInput = document.getElementById('ingredient-search-input');
+      
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        // Debounce search
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          searchIngredients(query);
+        }, 200);
+      });
+      
+      // Keyboard navigation
+      searchInput.addEventListener('keydown', (e) => {
+        const suggestions = document.querySelectorAll('.ingredient-suggestion');
+        
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, suggestions.length - 1);
+          updateSelectedSuggestion(suggestions);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+          updateSelectedSuggestion(suggestions);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]) {
+            suggestions[selectedSuggestionIndex].click();
+          }
+        } else if (e.key === 'Escape') {
+          closeIngredientPicker();
+        }
+      });
+    }
+    
+    function updateSelectedSuggestion(suggestions) {
+      suggestions.forEach((s, i) => {
+        s.classList.toggle('selected', i === selectedSuggestionIndex);
+      });
+      
+      // Scroll into view
+      if (selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]) {
+        suggestions[selectedSuggestionIndex].scrollIntoView({ block: 'nearest' });
+      }
+    }
+    
+    async function searchIngredients(query) {
+      const suggestionsContainer = document.getElementById('ingredient-suggestions');
+      
+      if (!query) {
+        suggestionsContainer.classList.remove('visible');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/ingredients?q=${encodeURIComponent(query)}&limit=10`);
+        const results = await response.json();
+        
+        selectedSuggestionIndex = -1;
+        
+        if (results.length === 0) {
+          suggestionsContainer.innerHTML = `
+            <div class="no-results-message">
+              No ingredients found for "${escapeHtml(query)}"
+            </div>
+          `;
+        } else {
+          suggestionsContainer.innerHTML = results.map((ing, i) => `
+            <div class="ingredient-suggestion" onclick="selectIngredient('${ing.id}', '${escapeHtml(ing.name)}', 'exact')">
+              <span class="ingredient-suggestion-name">${escapeHtml(ing.name)}</span>
+              <span class="ingredient-suggestion-category">${ing.category || ''}</span>
+            </div>
+          `).join('');
+        }
+        
+        suggestionsContainer.classList.add('visible');
+      } catch (err) {
+        console.error('Error searching ingredients:', err);
+        suggestionsContainer.innerHTML = `
+          <div class="no-results-message">Error searching ingredients</div>
+        `;
+        suggestionsContainer.classList.add('visible');
+      }
+    }
+    
+    // ==========================================
+    // Select Ingredient
+    // ==========================================
+    function selectIngredient(ingredientId, ingredientName, confidence) {
+      if (currentEditingIndex === null) return;
+      
+      // Update the structured ingredient data
+      structuredIngredients[currentEditingIndex].ingredientId = ingredientId;
+      structuredIngredients[currentEditingIndex].linkedName = ingredientName;
+      structuredIngredients[currentEditingIndex].matchConfidence = confidence;
+      
+      // Update the UI
+      refreshIngredientRow(currentEditingIndex);
+      
+      closeIngredientPicker();
+    }
+    
+    // ==========================================
+    // Leave Unlinked
+    // ==========================================
+    function leaveUnlinked() {
+      if (currentEditingIndex === null) return;
+      
+      structuredIngredients[currentEditingIndex].ingredientId = null;
+      structuredIngredients[currentEditingIndex].linkedName = null;
+      structuredIngredients[currentEditingIndex].matchConfidence = 'none';
+      
+      refreshIngredientRow(currentEditingIndex);
+      closeIngredientPicker();
+    }
+    
+    // ==========================================
+    // Create New Ingredient
+    // ==========================================
+    function createNewIngredient() {
+      // Get the current ingredient text for pre-filling
+      const currentText = structuredIngredients[currentEditingIndex]?.originalText || '';
+      const searchText = document.getElementById('ingredient-search-input').value;
+      
+      document.getElementById('new-ingredient-name').value = searchText || currentText;
+      document.getElementById('new-ingredient-category').value = '';
+      document.getElementById('new-ingredient-aliases').value = '';
+      
+      document.getElementById('create-ingredient-modal').classList.remove('hidden');
+      
+      setTimeout(() => {
+        document.getElementById('new-ingredient-name').focus();
+      }, 100);
+    }
+    
+    function closeCreateIngredientModal() {
+      document.getElementById('create-ingredient-modal').classList.add('hidden');
+    }
+    
+    async function submitNewIngredient() {
+      const name = document.getElementById('new-ingredient-name').value.trim();
+      const category = document.getElementById('new-ingredient-category').value;
+      const aliasesText = document.getElementById('new-ingredient-aliases').value.trim();
+      
+      if (!name) {
+        alert('Please enter an ingredient name');
+        return;
+      }
+      
+      const aliases = aliasesText ? aliasesText.split(',').map(a => a.trim()).filter(Boolean) : [];
+      
+      try {
+        const response = await fetch('/api/ingredients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, category: category || undefined, aliases })
+        });
+        
+        const result = await response.json();
+        
+        if (result.id || result.success) {
+          const ingredientId = result.id || result.data?.id;
+          const ingredientName = result.name || result.data?.name || name;
+          
+          closeCreateIngredientModal();
+          selectIngredient(ingredientId, ingredientName, 'exact');
+        } else {
+          alert(result.error || 'Failed to create ingredient');
+        }
+      } catch (err) {
+        console.error('Error creating ingredient:', err);
+        alert('Failed to create ingredient. Please try again.');
+      }
+    }
+    
+    // ==========================================
+    // Refresh Ingredient Row
+    // ==========================================
+    function refreshIngredientRow(index) {
+      const row = document.querySelector(`.ingredient-row[data-index="${index}"]`);
+      if (!row) return;
+      
+      const ingredient = structuredIngredients[index];
+      if (!ingredient) return;
+      
+      // Update match status
+      const statusEl = row.querySelector('.ingredient-match-status');
+      if (statusEl) {
+        statusEl.className = `ingredient-match-status ${getMatchClass(ingredient.matchConfidence)} match-tooltip`;
+        statusEl.dataset.tooltip = getMatchTooltip(ingredient.matchConfidence, ingredient.linkedName);
+        statusEl.innerHTML = getMatchIcon(ingredient.matchConfidence);
+      }
+      
+      // Update/add linked name badge
+      let linkedNameEl = row.querySelector('.ingredient-linked-name');
+      if (ingredient.linkedName) {
+        if (!linkedNameEl) {
+          linkedNameEl = document.createElement('span');
+          linkedNameEl.className = 'ingredient-linked-name';
+          row.querySelector('.ingredient-text-input').after(linkedNameEl);
+        }
+        linkedNameEl.textContent = `→ ${ingredient.linkedName}`;
+      } else if (linkedNameEl) {
+        linkedNameEl.remove();
+      }
+    }
+    
+    // ==========================================
+    // Show Form Message Helper
+    // ==========================================
+    function showFormMessage(messageDiv, message, type) {
+      messageDiv.textContent = message;
+      messageDiv.className = `mt-1 message message-${type}`;
     }
   </script>
 </body>

@@ -14,15 +14,69 @@ tags:
   - chocolate
 source: 'https://example.com/cookies'
 ingredients:
-  - 2 1/4 cups all-purpose flour
-  - 1 tsp baking soda
-  - 1 tsp salt
-  - '1 cup (2 sticks) butter, softened'
-  - 3/4 cup granulated sugar
-  - 3/4 cup packed brown sugar
-  - 2 large eggs
-  - 1 tsp vanilla extract
-  - 2 cups chocolate chips
+  - ingredientId: null
+    originalText: 2 1/4 cups all-purpose flour
+    quantity: 2.25
+    unit: cup
+    name: all-purpose flour
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 1 tsp baking soda
+    quantity: 1
+    unit: tsp
+    name: baking soda
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 1 tsp salt
+    quantity: 1
+    unit: tsp
+    name: salt
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: '1 cup (2 sticks) butter, softened'
+    quantity: 1
+    unit: cup
+    name: butter
+    preparation: softened
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 3/4 cup granulated sugar
+    quantity: 0.75
+    unit: cup
+    name: granulated sugar
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 3/4 cup packed brown sugar
+    quantity: 0.75
+    unit: cup
+    name: packed brown sugar
+    preparation: null
+    matchConfidence: none
+  - ingredientId: 9108086a-40d9-4cb5-ad8c-0a98e142d7bc
+    originalText: 2 large eggs
+    quantity: 2
+    unit: large
+    name: eggs
+    preparation: null
+    matchConfidence: exact
+  - ingredientId: null
+    originalText: 1 tsp vanilla extract
+    quantity: 1
+    unit: tsp
+    name: vanilla extract
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 2 cups chocolate chips
+    quantity: 2
+    unit: cup
+    name: chocolate chips
+    preparation: null
+    matchConfidence: none
 instructions:
   - Preheat oven to 375°F (190°C). Line baking sheets with parchment paper.
   - 'In a medium bowl, whisk together flour, baking soda, and salt. Set aside.'

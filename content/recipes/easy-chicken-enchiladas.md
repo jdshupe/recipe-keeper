@@ -16,14 +16,52 @@ tags:
   - Main
   - Mexican
 ingredients:
-  - 1 ½ cups cooked shredded chicken
-  - '2 cups easy enchilada sauce, (divided)'
-  - 8  corn or flour tortillas ((see note if using flour tortillas))
-  - '2 ½ cups shredded Mexican-blend cheese, (divided)'
-  - 'salt and black pepper, (to taste)'
-  - >-
-    optional toppings: diced onions, chopped cilantro, sour cream, shredded
-    lettuce, cotija cheese
+  - ingredientId: null
+    originalText: 1 ½ cups cooked shredded chicken
+    quantity: 1
+    unit: null
+    name: ½ cups cooked shredded chicken
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: '2 cups easy enchilada sauce, (divided)'
+    quantity: 2
+    unit: cup
+    name: easy enchilada sauce
+    preparation: divided
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 8  corn or flour tortillas ((see note if using flour tortillas))
+    quantity: 8
+    unit: null
+    name: corn or flour tortillas ((see note if using flour tortillas))
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: '2 ½ cups shredded Mexican-blend cheese, (divided)'
+    quantity: 2
+    unit: null
+    name: ½ cups shredded Mexican-blend cheese
+    preparation: divided
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 'salt and black pepper, (to taste)'
+    quantity: null
+    unit: null
+    name: salt and black pepper
+    preparation: to taste
+    matchConfidence: none
+  - ingredientId: null
+    originalText: >-
+      optional toppings: diced onions, chopped cilantro, sour cream, shredded
+      lettuce, cotija cheese
+    quantity: null
+    unit: null
+    name: >-
+      optional toppings: diced onions cilantro, sour cream lettuce, cotija
+      cheese
+    preparation: chopped
+    matchConfidence: none
 instructions:
   - "Preheat oven to\_350ºF. In a large bowl, combine the shredded chicken, ¼ cup enchilada sauce and a generous pinch of salt and pepper. Mix together and taste. Season with more salt and pepper as needed."
   - >-

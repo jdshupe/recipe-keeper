@@ -171,6 +171,47 @@
       font-weight: 500;
     }
 
+    /* Match type indicators */
+    .match-type-legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .match-type-legend span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .match-indicator {
+      display: inline-flex;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    .match-indicator.exact {
+      background: var(--success-accent);
+    }
+
+    .match-indicator.text {
+      background: #ffb74d;
+    }
+
+    .match-indicator.substitute {
+      background: #90caf9;
+    }
+
+    .match-indicator.missing {
+      background: var(--error-text);
+    }
+
     .missing-section {
       border-top: 1px solid var(--border-light);
       margin-top: 0.75rem;
@@ -206,9 +247,10 @@
     .missing-list {
       display: none;
       margin-top: 0.5rem;
-      padding-left: 1rem;
+      padding-left: 0;
       font-size: 0.875rem;
       color: var(--text-secondary);
+      list-style: none;
     }
 
     .missing-list.show {
@@ -216,30 +258,47 @@
     }
 
     .missing-list li {
-      padding: 0.25rem 0;
+      padding: 0.375rem 0;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.5rem;
+      flex-wrap: wrap;
     }
 
-    .missing-list li::before {
-      content: "•";
-      color: var(--error-text);
+    .missing-ingredient-name {
+      flex: 1;
+      min-width: 120px;
     }
 
-    .missing-list li.has-substitute::before {
-      content: "↔";
-      color: var(--success-text);
+    .missing-ingredient-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .add-to-list-btn {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .add-to-list-btn:hover {
+      opacity: 0.9;
     }
 
     .substitute-hint {
       font-size: 0.75rem;
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
-      margin-left: 0.5rem;
       display: inline-flex;
       align-items: center;
       gap: 0.25rem;
+      white-space: nowrap;
     }
 
     .substitute-hint.quality-great {
@@ -270,6 +329,48 @@
       background: #3d2814;
       color: #ffab40;
       border-color: #5c3d1f;
+    }
+
+    /* Match confidence breakdown */
+    .match-confidence {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .match-confidence-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+      background: var(--bg-secondary);
+    }
+
+    .match-confidence-item.exact {
+      background: var(--success-bg);
+      color: var(--success-text);
+    }
+
+    .match-confidence-item.text {
+      background: #fff8e1;
+      color: #f57c00;
+    }
+
+    .dark-mode .match-confidence-item.text {
+      background: #3d3014;
+      color: #ffb74d;
+    }
+
+    .match-confidence-item.substitute {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    .dark-mode .match-confidence-item.substitute {
+      background: #1a3a5c;
+      color: #79c0ff;
     }
 
     .match-card-actions {
@@ -459,6 +560,8 @@
     let allMatches = [];
     let shoppingLists = [];
     let substitutionCache = {};
+    let pantryItems = [];
+    let ingredientsDb = [];
 
     // Initialize page
     document.addEventListener('DOMContentLoaded', () => {
@@ -471,28 +574,31 @@
 
     async function loadPantryMatches() {
       try {
-        const result = await api('/recipes/pantry-match?limit=100');
+        // Load pantry items and ingredients database in parallel
+        const [pantryResult, ingredientsResult, recipesResult] = await Promise.all([
+          api('/ingredients/pantry'),
+          api('/ingredients'),
+          api('/recipes')
+        ]);
         
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to load matches');
-        }
-
-        allMatches = result.data;
+        pantryItems = pantryResult.success ? pantryResult.data : [];
+        ingredientsDb = ingredientsResult.success ? ingredientsResult.data : [];
+        const recipes = recipesResult.success ? recipesResult.data : [];
         
-        // Check if pantry is empty (all matches have 0%)
-        const pantryResult = await api('/ingredients/pantry');
-        const pantryItems = pantryResult.success ? pantryResult.data : [];
-        
-        // Update stats
-        updateStats(allMatches, pantryItems);
-        
-        if (pantryItems.length === 0) {
+        // Check if pantry is empty
+        if (pantryItems.length === 0 || pantryItems.filter(p => p.quantity > 0).length === 0) {
           document.getElementById('empty-pantry').classList.remove('hidden');
           document.getElementById('match-results').innerHTML = '';
           document.getElementById('match-stats').classList.add('hidden');
           document.querySelector('.filter-section').classList.add('hidden');
           return;
         }
+        
+        // Perform client-side matching with proper ID-based logic
+        allMatches = await matchRecipesToPantry(recipes);
+        
+        // Update stats
+        updateStats(allMatches, pantryItems);
         
         // Preload substitutions for missing ingredients
         await preloadSubstitutions(allMatches);
@@ -509,10 +615,235 @@
       }
     }
     
+    /**
+     * Match recipes to pantry using proper ID-based matching with text fallback
+     */
+    async function matchRecipesToPantry(recipes) {
+      const results = [];
+      
+      // Build pantry lookup maps for efficient matching
+      const pantryByIngredientId = new Map();
+      const pantryByNameLower = new Map();
+      
+      for (const item of pantryItems) {
+        if (item.quantity <= 0) continue;
+        
+        // Index by ingredient ID if available
+        if (item.ingredientId) {
+          pantryByIngredientId.set(item.ingredientId, item);
+        }
+        
+        // Index by name (lowercase) for fuzzy matching
+        const nameLower = (item.ingredientName || '').toLowerCase();
+        if (nameLower) {
+          pantryByNameLower.set(nameLower, item);
+        }
+      }
+      
+      // Get enriched recipe data for each recipe
+      for (const recipe of recipes) {
+        try {
+          // Fetch enriched recipe with full ingredient details
+          const enrichedResult = await api(`/recipes/${recipe.slug}/enriched`);
+          const enrichedRecipe = enrichedResult.success ? enrichedResult.data : recipe;
+          
+          const matchResult = matchSingleRecipe(enrichedRecipe, pantryByIngredientId, pantryByNameLower);
+          matchResult.recipe = recipe; // Use original recipe for display
+          results.push(matchResult);
+        } catch (err) {
+          console.error(`Error matching recipe ${recipe.slug}:`, err);
+          // Still include the recipe with a basic match
+          const basicMatch = matchSingleRecipeBasic(recipe, pantryByNameLower);
+          results.push(basicMatch);
+        }
+      }
+      
+      // Sort by match percentage (highest first), then by number of missing (lowest first)
+      results.sort((a, b) => {
+        if (b.matchPercentage !== a.matchPercentage) {
+          return b.matchPercentage - a.matchPercentage;
+        }
+        return a.missing.length - b.missing.length;
+      });
+      
+      return results;
+    }
+    
+    /**
+     * Match a single recipe with enriched ingredient data
+     */
+    function matchSingleRecipe(recipe, pantryByIngredientId, pantryByNameLower) {
+      const ingredients = recipe.enrichedIngredients || recipe.ingredients || [];
+      
+      let exactMatches = 0;
+      let textMatches = 0;
+      let substituteMatches = 0;
+      const missing = [];
+      const matchDetails = [];
+      
+      for (const ing of ingredients) {
+        // Handle both structured and plain text ingredients
+        const isStructured = typeof ing === 'object' && ing !== null;
+        const ingredientId = isStructured ? ing.ingredientId : null;
+        const ingredientName = isStructured ? (ing.dbName || ing.name || '') : (typeof ing === 'string' ? parseIngredientName(ing) : '');
+        const displayName = isStructured ? (ing.name || ing.dbName || '') : ingredientName;
+        
+        let matchType = null;
+        let matchedPantryItem = null;
+        
+        // 1. Try exact ID match first (most accurate)
+        if (ingredientId && pantryByIngredientId.has(ingredientId)) {
+          matchType = 'exact';
+          matchedPantryItem = pantryByIngredientId.get(ingredientId);
+          exactMatches++;
+        }
+        // 2. Fall back to fuzzy text matching
+        else {
+          const nameLower = ingredientName.toLowerCase();
+          
+          // Try exact name match
+          if (pantryByNameLower.has(nameLower)) {
+            matchType = 'text';
+            matchedPantryItem = pantryByNameLower.get(nameLower);
+            textMatches++;
+          }
+          // Try partial name matching
+          else {
+            const partialMatch = findPartialNameMatch(nameLower, pantryByNameLower);
+            if (partialMatch) {
+              matchType = 'text';
+              matchedPantryItem = partialMatch;
+              textMatches++;
+            }
+          }
+        }
+        
+        // Track match details
+        matchDetails.push({
+          ingredientId,
+          name: displayName,
+          originalText: isStructured ? ing.originalText : ing,
+          matchType,
+          matchedPantryItem
+        });
+        
+        // Track missing ingredients
+        if (!matchType) {
+          missing.push({
+            ingredientId,
+            name: displayName,
+            originalText: isStructured ? ing.originalText : ing,
+            dbName: isStructured ? ing.dbName : null
+          });
+        }
+      }
+      
+      const total = ingredients.length;
+      const available = exactMatches + textMatches + substituteMatches;
+      const matchPercentage = total > 0 ? Math.round((available / total) * 100) : 0;
+      
+      return {
+        recipe,
+        available,
+        total,
+        matchPercentage,
+        missing,
+        matchDetails,
+        exactMatches,
+        textMatches,
+        substituteMatches
+      };
+    }
+    
+    /**
+     * Basic matching for recipes without enriched data
+     */
+    function matchSingleRecipeBasic(recipe, pantryByNameLower) {
+      const ingredients = recipe.ingredients || [];
+      
+      let textMatches = 0;
+      const missing = [];
+      
+      for (const ing of ingredients) {
+        const ingredientName = typeof ing === 'string' ? parseIngredientName(ing) : (ing.name || '');
+        const nameLower = ingredientName.toLowerCase();
+        
+        let matched = false;
+        
+        // Try exact name match
+        if (pantryByNameLower.has(nameLower)) {
+          matched = true;
+          textMatches++;
+        }
+        // Try partial name matching
+        else {
+          const partialMatch = findPartialNameMatch(nameLower, pantryByNameLower);
+          if (partialMatch) {
+            matched = true;
+            textMatches++;
+          }
+        }
+        
+        if (!matched) {
+          missing.push({
+            name: ingredientName,
+            originalText: typeof ing === 'string' ? ing : ing.originalText
+          });
+        }
+      }
+      
+      const total = ingredients.length;
+      const available = textMatches;
+      const matchPercentage = total > 0 ? Math.round((available / total) * 100) : 0;
+      
+      return {
+        recipe,
+        available,
+        total,
+        matchPercentage,
+        missing,
+        matchDetails: [],
+        exactMatches: 0,
+        textMatches,
+        substituteMatches: 0
+      };
+    }
+    
+    /**
+     * Find a partial name match in pantry
+     */
+    function findPartialNameMatch(ingredientName, pantryByNameLower) {
+      for (const [pantryName, item] of pantryByNameLower) {
+        // Check if ingredient name contains pantry name or vice versa
+        if (ingredientName.includes(pantryName) || pantryName.includes(ingredientName)) {
+          return item;
+        }
+      }
+      return null;
+    }
+    
+    /**
+     * Parse ingredient name from text string (basic extraction)
+     */
+    function parseIngredientName(text) {
+      if (!text) return '';
+      // Remove quantity and unit patterns from beginning
+      const cleaned = text
+        .replace(/^[\d\/\.\s½¼¾⅓⅔⅛]+/, '') // Remove numbers and fractions
+        .replace(/^(cups?|tbsps?|tsps?|tablespoons?|teaspoons?|oz|ounces?|lbs?|pounds?|grams?|g|kg|ml|liters?|pieces?|cans?|jars?|packages?|pkgs?|bunch|head|cloves?|stalks?|medium|large|small)\s+/i, '')
+        .replace(/,.*$/, '') // Remove everything after comma
+        .replace(/\(.*?\)/g, '') // Remove parenthetical notes
+        .trim();
+      return cleaned || text;
+    }
+    
     async function preloadSubstitutions(matches) {
-      // Collect all unique missing ingredients
+      // Collect all unique missing ingredient names
       const allMissing = new Set();
-      matches.forEach(m => m.missing.forEach(item => allMissing.add(item)));
+      matches.forEach(m => m.missing.forEach(item => {
+        const name = typeof item === 'object' ? item.name : item;
+        if (name) allMissing.add(name);
+      }));
       
       if (allMissing.size === 0) return;
       
@@ -531,7 +862,8 @@
     }
     
     function getSubstituteHint(ingredientName) {
-      const subs = substitutionCache[ingredientName];
+      const name = typeof ingredientName === 'object' ? ingredientName.name : ingredientName;
+      const subs = substitutionCache[name];
       if (!subs || !subs.availableInPantry || subs.availableInPantry.length === 0) {
         return null;
       }
@@ -556,8 +888,8 @@
       };
       
       return `
-        <span class="substitute-hint quality-${sub.quality}" title="${sub.notes || ''}">
-          ${qualityEmoji[sub.quality] || ''} Use ${sub.name}
+        <span class="substitute-hint quality-${sub.quality}" title="${escapeHtml(sub.notes || '')}">
+          ${qualityEmoji[sub.quality] || ''} Use ${escapeHtml(sub.name)}
         </span>
       `;
     }
@@ -619,11 +951,25 @@
           ? `<img src="${recipe.image}" alt="${escapeHtml(recipe.title)}" loading="lazy">`
           : '🍽️';
         
-        // Build missing ingredients list with substitution hints
+        // Build missing ingredients list with substitution hints and add-to-list buttons
         const missingItemsHtml = match.missing.map(item => {
+          const name = typeof item === 'object' ? item.name : item;
+          const dbName = typeof item === 'object' ? item.dbName : null;
+          const displayName = dbName || name;
           const sub = getSubstituteHint(item);
-          const hasSubClass = sub ? 'has-substitute' : '';
-          return `<li class="${hasSubClass}">${escapeHtml(item)}${renderSubstituteHint(sub)}</li>`;
+          
+          return `
+            <li>
+              <span class="match-indicator missing"></span>
+              <span class="missing-ingredient-name">${escapeHtml(displayName)}</span>
+              <div class="missing-ingredient-actions">
+                ${sub ? renderSubstituteHint(sub) : ''}
+                <button class="add-to-list-btn" onclick="addSingleIngredientToShoppingList('${escapeHtml(name)}', '${escapeHtml(recipe.title)}', event)">
+                  + List
+                </button>
+              </div>
+            </li>
+          `;
         }).join('');
         
         // Count substitutable items
@@ -631,6 +977,16 @@
         const substitutionNote = substitutableCount > 0 
           ? `<span class="substitution-note">(${substitutableCount} can be substituted)</span>` 
           : '';
+        
+        // Build match confidence breakdown
+        const hasConfidenceData = match.exactMatches > 0 || match.textMatches > 0;
+        const confidenceHtml = hasConfidenceData ? `
+          <div class="match-confidence">
+            ${match.exactMatches > 0 ? `<span class="match-confidence-item exact"><span class="match-indicator exact"></span> ${match.exactMatches} exact</span>` : ''}
+            ${match.textMatches > 0 ? `<span class="match-confidence-item text"><span class="match-indicator text"></span> ${match.textMatches} text</span>` : ''}
+            ${match.substituteMatches > 0 ? `<span class="match-confidence-item substitute"><span class="match-indicator substitute"></span> ${match.substituteMatches} sub</span>` : ''}
+          </div>
+        ` : '';
         
         const missingHtml = match.missing.length > 0 ? `
           <div class="missing-section">
@@ -663,6 +1019,7 @@
               <div class="ingredient-count">
                 <span class="available">${match.available} of ${match.total}</span> ingredients available
               </div>
+              ${confidenceHtml}
               <div class="match-progress">
                 <div class="match-progress-fill ${matchClass}" style="width: ${match.matchPercentage}%"></div>
               </div>
@@ -684,6 +1041,45 @@
       button.classList.toggle('expanded');
       const list = button.nextElementSibling;
       list.classList.toggle('show');
+    }
+    
+    /**
+     * Add a single ingredient to shopping list
+     */
+    async function addSingleIngredientToShoppingList(ingredientName, recipeTitle, event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      try {
+        // Ensure we have a shopping list
+        if (shoppingLists.length === 0) {
+          const createResult = await api('/shopping-lists', {
+            method: 'POST',
+            body: JSON.stringify({ name: 'Shopping List' })
+          });
+          
+          if (createResult.success) {
+            shoppingLists.push(createResult.data);
+          } else {
+            throw new Error('Failed to create shopping list');
+          }
+        }
+
+        const listId = shoppingLists[0].id;
+        
+        await api(`/shopping-lists/${listId}/custom-item`, {
+          method: 'POST',
+          body: JSON.stringify({ 
+            name: ingredientName,
+            notes: `For: ${recipeTitle}`
+          })
+        });
+        
+        showToast(`Added ${ingredientName} to shopping list`, 'success');
+      } catch (err) {
+        console.error('Error adding to shopping list:', err);
+        showToast('Failed to add to shopping list', 'error');
+      }
     }
 
     async function addMissingToShoppingList(recipeSlug, event) {
@@ -718,12 +1114,13 @@
         
         // Add missing ingredients as custom items
         let addedCount = 0;
-        for (const ingredient of match.missing) {
+        for (const item of match.missing) {
+          const ingredientName = typeof item === 'object' ? (item.dbName || item.name) : item;
           try {
             await api(`/shopping-lists/${listId}/custom-item`, {
               method: 'POST',
               body: JSON.stringify({ 
-                name: ingredient,
+                name: ingredientName,
                 notes: `For: ${match.recipe.title}`
               })
             });

@@ -42,21 +42,63 @@
       "notes": null,
       "addedAt": "2026-01-26T21:25:58.584Z",
       "updatedAt": "2026-01-26T21:26:08.371Z"
+    },
+    {
+      "id": "ba80ba7c-41c7-4aa8-a860-c0fbc38d431f",
+      "ingredientId": "9108086a-40d9-4cb5-ad8c-0a98e142d7bc",
+      "ingredientName": "Eggs",
+      "quantity": 24,
+      "unit": "piece",
+      "location": "refrigerator",
+      "purchaseDate": "2026-01-26",
+      "expirationDate": null,
+      "opened": false,
+      "notes": null,
+      "addedAt": "2026-01-26T21:47:56.483Z",
+      "updatedAt": "2026-01-26T21:47:56.483Z"
+    },
+    {
+      "id": "f3a44ac7-65aa-4e8b-8fec-1dc6c6e05f6a",
+      "ingredientId": "ca604383-d137-4fab-831e-869eb8688cd5",
+      "ingredientName": "Milk",
+      "quantity": 1,
+      "unit": "gallon",
+      "location": "refrigerator",
+      "purchaseDate": "2026-01-26",
+      "expirationDate": null,
+      "opened": false,
+      "notes": null,
+      "addedAt": "2026-01-26T21:47:56.486Z",
+      "updatedAt": "2026-01-26T21:47:56.486Z"
+    },
+    {
+      "id": "556e5435-b312-4330-ba8a-90127d54fb9e",
+      "ingredientId": "4aed0454-c0d2-488d-96a0-2b0b8bd12fbe",
+      "ingredientName": "Tomatoes",
+      "quantity": 1,
+      "unit": "piece",
+      "location": "refrigerator",
+      "purchaseDate": "2026-01-26",
+      "expirationDate": "2026-02-02",
+      "opened": false,
+      "notes": null,
+      "addedAt": "2026-01-26T22:00:37.949Z",
+      "updatedAt": "2026-01-26T22:00:37.949Z"
     }
   ],
-  "lastUpdated": "2026-01-26T21:26:08.373Z",
+  "lastUpdated": "2026-01-26T22:00:37.951Z",
   "frequencyData": {
     "milk": {
-      "count": 4,
+      "count": 5,
       "displayName": "Milk",
-      "lastAdded": "2026-01-26T20:52:52.450Z",
+      "lastAdded": "2026-01-26T21:47:56.486Z",
       "lastUnit": "gallon",
       "lastLocation": "refrigerator"
     },
     "eggs": {
-      "count": 4,
+      "count": 5,
       "displayName": "Eggs",
-      "lastAdded": "2026-01-26T21:25:58.584Z",
+      "lastAdded": "2026-01-26T21:47:56.483Z",
       "lastUnit": "piece",
       "lastLocation": "refrigerator"
     },
@@ -68,30 +110,30 @@
       "lastLocation": "pantry"
     },
     "tomatoes": {
-      "count": 1,
+      "count": 2,
       "displayName": "Tomatoes",
-      "lastAdded": "2026-01-26T21:25:33.920Z",
+      "lastAdded": "2026-01-26T22:00:37.949Z",
       "lastUnit": "piece",
       "lastLocation": "refrigerator"
     }
   },
   "recentlyAdded": [
     {
-      "ingredientName": "Eggs",
-      "addedAt": "2026-01-26T21:25:58.584Z",
-      "unit": "piece",
-      "location": "refrigerator"
-    },
-    {
       "ingredientName": "Tomatoes",
-      "addedAt": "2026-01-26T21:25:33.920Z",
+      "addedAt": "2026-01-26T22:00:37.949Z",
       "unit": "piece",
       "location": "refrigerator"
     },
     {
       "ingredientName": "Milk",
-      "addedAt": "2026-01-26T20:52:52.450Z",
+      "addedAt": "2026-01-26T21:47:56.486Z",
       "unit": "gallon",
+      "location": "refrigerator"
+    },
+    {
+      "ingredientName": "Eggs",
+      "addedAt": "2026-01-26T21:47:56.483Z",
+      "unit": "piece",
       "location": "refrigerator"
     },
     {
