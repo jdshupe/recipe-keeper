@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pantry - Recipe Keeper</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    // Apply dark mode immediately to prevent flash
+    if (localStorage.getItem('darkMode') === 'true' || 
+        (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+  <style>
+    /* Pantry-specific styles */
+    .pantry-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .pantry-stat {
+      background: var(--bg-card);
+      padding: 1rem;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border-light);
+    }
+    
+    .pantry-stat .stat-icon {
+      font-size: 1.5rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    
+    .pantry-stat .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text-heading);
+      display: block;
+    }
+    
+    .pantry-stat .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    
+    .expiring-alert {
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .expiring-alert.warning {
+      background: #fff8e1;
+      border-color: #ffe082;
+    }
+    
+    .dark-mode .expiring-alert.warning {
+      background: #3d3014;
+      border-color: #5c4d1f;
+    }
+    
+    .expiring-alert h3 {
+      margin: 0 0 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .expiring-alert ul {
+      margin: 0;
+      padding-left: 1.5rem;
+    }
+    
+    .expiring-alert li {
+      padding: 0.25rem 0;
+    }
+    
+    .location-section {
+      background: var(--bg-card);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+    
+    .location-header {
+      background: var(--bg-hover);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .location-header:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .location-header h3 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .location-header .item-count {
+      background: var(--category-count-bg);
+      color: var(--category-count-text);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+    }
+    
+    .location-items {
+      padding: 1rem 1.5rem;
+    }
+    
+    .location-items.collapsed {
+      display: none;
+    }
+    
+    .pantry-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .pantry-item:last-child {
+      border-bottom: none;
+    }
+    
+    .pantry-item:hover {
+      background: var(--bg-hover);
+    }
+    
+    .pantry-item.expiring-soon {
+      background: #fff8e1;
+    }
+    
+    .dark-mode .pantry-item.expiring-soon {
+      background: #3d3014;
+    }
+    
+    .pantry-item.expired {
+      background: var(--error-bg);
+      opacity: 0.8;
+    }
+    
+    .pantry-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: var(--checkbox-accent);
+    }
+    
+    .pantry-item .item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .pantry-item .item-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      display: block;
+    }
+    
+    .pantry-item .item-details {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .pantry-item .expiration-badge {
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .expiration-badge.expired {
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+    
+    .expiration-badge.warning {
+      background: #fff8e1;
+      color: #e65100;
+    }
+    
+    .dark-mode .expiration-badge.warning {
+      background: #3d3014;
+      color: #ffb74d;
+    }
+    
+    .pantry-item .quantity-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .quantity-controls .qty-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .quantity-controls .qty-btn:hover {
+      background: var(--bg-hover);
+    }
+    
+    .quantity-controls .qty-value {
+      min-width: 40px;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .pantry-item .item-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .item-actions .action-btn {
+      padding: 0.5rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 4px;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    
+    .item-actions .action-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    
+    .item-actions .action-btn.delete:hover {
+      background: var(--danger-bg);
+      color: var(--danger-text);
+    }
+    
+    /* Add Pantry Item Form */
+    .add-pantry-form {
+      background: var(--bg-card);
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 2rem;
+      border: 1px solid var(--border-light);
+    }
+    
+    .add-pantry-form h2 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .form-row-dates {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 1rem;
+      align-items: end;
+    }
+    
+    @media (max-width: 768px) {
+      .form-row, .form-row-dates {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .autocomplete-wrapper {
+      position: relative;
+    }
+    
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .autocomplete-list.hidden {
+      display: none;
+    }
+    
+    .autocomplete-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+    
+    .autocomplete-item:hover,
+    .autocomplete-item.selected {
+      background: var(--bg-hover);
+    }
+    
+    .autocomplete-item .item-category {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    
+    /* Filter & Search */
+    .pantry-controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .pantry-controls .search-input {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .location-filter {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .location-filter .filter-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+    
+    .location-filter .filter-btn:hover {
+      background: var(--bg-hover);
+    }
+    
+    .location-filter .filter-btn.active {
+      background: var(--accent-primary);
+      color: #fff;
+      border-color: var(--accent-primary);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+    }
+    
+    .empty-state .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    /* Edit Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.hidden {
+      display: none;
+    }
+    
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: var(--modal-backdrop);
+    }
+    
+    .modal-content {
+      position: relative;
+      background: var(--modal-bg);
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .modal-header h2 {
+      margin: 0;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0;
+      line-height: 1;
+    }
+    
+    .modal-close:hover {
+      color: var(--text-primary);
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+    }
+    
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      background: var(--modal-footer-bg);
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+    
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .page-header h1 {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <a href="/" class="logo">🍳 Recipe Keeper</a>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/recipes.html">Recipes</a>
+        <a href="/collections.html">Collections</a>
+        <a href="/shopping-lists.html">Shopping Lists</a>
+        <a href="/pantry.html" class="active">Pantry</a>
+      </div>
+      <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
+    </div>
+  </nav>
+  <div class="mobile-nav-overlay"></div>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>🏪 My Pantry</h1>
+      <a href="/api/ingredients" target="_blank" class="btn btn-secondary btn-small">📚 Ingredient Database</a>
+    </div>
+    
+    <!-- Stats Section -->
+    <div class="pantry-stats">
+      <div class="pantry-stat">
+        <span class="stat-icon">📦</span>
+        <span class="stat-value" id="stat-total">-</span>
+        <span class="stat-label">Total Items</span>
+      </div>
+      <div class="pantry-stat">
+        <span class="stat-icon">🧊</span>
+        <span class="stat-value" id="stat-pantry">-</span>
+        <span class="stat-label">Pantry</span>
+      </div>
+      <div class="pantry-stat">
+        <span class="stat-icon">❄️</span>
+        <span class="stat-value" id="stat-refrigerator">-</span>
+        <span class="stat-label">Refrigerator</span>
+      </div>
+      <div class="pantry-stat">
+        <span class="stat-icon">🥶</span>
+        <span class="stat-value" id="stat-freezer">-</span>
+        <span class="stat-label">Freezer</span>
+      </div>
+    </div>
+
+    <!-- Expiring Items Alert -->
+    <div id="expiring-alert" class="expiring-alert warning hidden">
+      <h3>⚠️ Items Expiring Soon</h3>
+      <ul id="expiring-list"></ul>
+    </div>
+    
+    <div id="expired-alert" class="expiring-alert hidden">
+      <h3>🚨 Expired Items</h3>
+      <ul id="expired-list"></ul>
+    </div>
+
+    <!-- Add Pantry Item Form -->
+    <div class="add-pantry-form">
+      <h2>➕ Add to Pantry</h2>
+      <form id="add-pantry-form">
+        <div class="form-row">
+          <div class="form-group autocomplete-wrapper">
+            <label class="form-label" for="ingredient-name">Ingredient Name *</label>
+            <input type="text" class="form-input" id="ingredient-name" placeholder="Start typing..." required autocomplete="off">
+            <div id="autocomplete-list" class="autocomplete-list hidden"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="quantity">Quantity</label>
+            <input type="number" class="form-input" id="quantity" placeholder="1" min="0" step="0.1" value="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="unit">Unit</label>
+            <select class="form-input" id="unit">
+              <option value="">None</option>
+              <option value="piece">piece</option>
+              <option value="lb">lb</option>
+              <option value="oz">oz</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="cup">cup</option>
+              <option value="tbsp">tbsp</option>
+              <option value="tsp">tsp</option>
+              <option value="ml">ml</option>
+              <option value="L">L</option>
+              <option value="bottle">bottle</option>
+              <option value="can">can</option>
+              <option value="bag">bag</option>
+              <option value="box">box</option>
+              <option value="jar">jar</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="location">Location *</label>
+            <select class="form-input" id="location" required>
+              <option value="pantry">🧊 Pantry</option>
+              <option value="refrigerator">❄️ Refrigerator</option>
+              <option value="freezer">🥶 Freezer</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-dates">
+          <div class="form-group">
+            <label class="form-label" for="purchase-date">Purchase Date</label>
+            <input type="date" class="form-input" id="purchase-date">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="expiration-date">Expiration Date</label>
+            <input type="date" class="form-input" id="expiration-date">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="notes">Notes</label>
+            <input type="text" class="form-input" id="notes" placeholder="Optional notes...">
+          </div>
+          <button type="submit" class="btn btn-primary">Add Item</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="pantry-controls">
+      <input type="text" class="form-input search-input" id="pantry-search" placeholder="🔍 Search pantry items...">
+      <div class="location-filter">
+        <button class="filter-btn active" data-location="all">All</button>
+        <button class="filter-btn" data-location="pantry">🧊 Pantry</button>
+        <button class="filter-btn" data-location="refrigerator">❄️ Refrigerator</button>
+        <button class="filter-btn" data-location="freezer">🥶 Freezer</button>
+      </div>
+    </div>
+
+    <!-- Pantry Items -->
+    <div id="pantry-items">
+      <div class="loading"><span class="spinner"></span> Loading pantry items...</div>
+    </div>
+  </main>
+
+  <!-- Edit Item Modal -->
+  <div id="edit-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeEditModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Pantry Item</h2>
+        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+      </div>
+      <form id="edit-pantry-form">
+        <div class="modal-body">
+          <input type="hidden" id="edit-id">
+          <div class="form-group">
+            <label class="form-label" for="edit-name">Item Name</label>
+            <input type="text" class="form-input" id="edit-name" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-quantity">Quantity</label>
+            <input type="number" class="form-input" id="edit-quantity" min="0" step="0.1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-unit">Unit</label>
+            <select class="form-input" id="edit-unit">
+              <option value="">None</option>
+              <option value="piece">piece</option>
+              <option value="lb">lb</option>
+              <option value="oz">oz</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="cup">cup</option>
+              <option value="tbsp">tbsp</option>
+              <option value="tsp">tsp</option>
+              <option value="ml">ml</option>
+              <option value="L">L</option>
+              <option value="bottle">bottle</option>
+              <option value="can">can</option>
+              <option value="bag">bag</option>
+              <option value="box">box</option>
+              <option value="jar">jar</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-location">Location</label>
+            <select class="form-input" id="edit-location">
+              <option value="pantry">🧊 Pantry</option>
+              <option value="refrigerator">❄️ Refrigerator</option>
+              <option value="freezer">🥶 Freezer</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-expiration">Expiration Date</label>
+            <input type="date" class="form-input" id="edit-expiration">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-notes">Notes</label>
+            <input type="text" class="form-input" id="edit-notes" placeholder="Optional notes...">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    // Pantry state
+    let pantryItems = [];
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let autocompleteTimeout = null;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPantryItems();
+      loadExpiringItems();
+      setupEventListeners();
+      setDefaultDates();
+    });
+
+    function setDefaultDates() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('purchase-date').value = today;
+    }
+
+    function setupEventListeners() {
+      // Add form
+      document.getElementById('add-pantry-form').addEventListener('submit', handleAddItem);
+      
+      // Edit form
+      document.getElementById('edit-pantry-form').addEventListener('submit', handleEditItem);
+      
+      // Search
+      document.getElementById('pantry-search').addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase();
+        renderPantryItems();
+      });
+      
+      // Location filter
+      document.querySelectorAll('.location-filter .filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.location-filter .filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentFilter = btn.dataset.location;
+          renderPantryItems();
+        });
+      });
+      
+      // Autocomplete
+      const ingredientInput = document.getElementById('ingredient-name');
+      ingredientInput.addEventListener('input', handleAutocomplete);
+      ingredientInput.addEventListener('blur', () => {
+        setTimeout(() => {
+          document.getElementById('autocomplete-list').classList.add('hidden');
+        }, 200);
+      });
+    }
+
+    async function handleAutocomplete(e) {
+      const query = e.target.value.trim();
+      const list = document.getElementById('autocomplete-list');
+      
+      if (query.length < 2) {
+        list.classList.add('hidden');
+        return;
+      }
+      
+      clearTimeout(autocompleteTimeout);
+      autocompleteTimeout = setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/ingredients?q=${encodeURIComponent(query)}&limit=10`);
+          const ingredients = await response.json();
+          
+          if (ingredients.length === 0) {
+            list.classList.add('hidden');
+            return;
+          }
+          
+          list.innerHTML = ingredients.map(ing => `
+            <div class="autocomplete-item" data-name="${escapeHtml(ing.name)}">
+              <div>${escapeHtml(ing.name)}</div>
+              <div class="item-category">${ing.category || 'Uncategorized'}</div>
+            </div>
+          `).join('');
+          
+          list.querySelectorAll('.autocomplete-item').forEach(item => {
+            item.addEventListener('click', () => {
+              document.getElementById('ingredient-name').value = item.dataset.name;
+              list.classList.add('hidden');
+            });
+          });
+          
+          list.classList.remove('hidden');
+        } catch (err) {
+          console.error('Autocomplete error:', err);
+        }
+      }, 300);
+    }
+
+    async function loadPantryItems() {
+      try {
+        const response = await fetch('/api/ingredients/pantry/items');
+        pantryItems = await response.json();
+        updateStats();
+        renderPantryItems();
+      } catch (err) {
+        console.error('Error loading pantry items:', err);
+        document.getElementById('pantry-items').innerHTML = 
+          '<div class="message message-error">Failed to load pantry items</div>';
+      }
+    }
+
+    async function loadExpiringItems() {
+      try {
+        // Load expiring soon (next 7 days)
+        const expiringResponse = await fetch('/api/ingredients/pantry/expiring?days=7');
+        const expiringItems = await expiringResponse.json();
+        
+        const expiringAlert = document.getElementById('expiring-alert');
+        const expiringList = document.getElementById('expiring-list');
+        
+        if (expiringItems.length > 0) {
+          expiringList.innerHTML = expiringItems.map(item => {
+            const daysLeft = getDaysUntilExpiration(item.expirationDate);
+            return `<li><strong>${escapeHtml(item.ingredientName || item.name)}</strong> - expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}</li>`;
+          }).join('');
+          expiringAlert.classList.remove('hidden');
+        } else {
+          expiringAlert.classList.add('hidden');
+        }
+        
+        // Load expired items
+        const expiredResponse = await fetch('/api/ingredients/pantry/expired');
+        const expiredItems = await expiredResponse.json();
+        
+        const expiredAlert = document.getElementById('expired-alert');
+        const expiredList = document.getElementById('expired-list');
+        
+        if (expiredItems.length > 0) {
+          expiredList.innerHTML = expiredItems.map(item => 
+            `<li><strong>${escapeHtml(item.ingredientName || item.name)}</strong> - expired ${formatDate(item.expirationDate)}</li>`
+          ).join('');
+          expiredAlert.classList.remove('hidden');
+        } else {
+          expiredAlert.classList.add('hidden');
+        }
+      } catch (err) {
+        console.error('Error loading expiring items:', err);
+      }
+    }
+
+    function updateStats() {
+      const counts = {
+        total: pantryItems.length,
+        pantry: 0,
+        refrigerator: 0,
+        freezer: 0
+      };
+      
+      pantryItems.forEach(item => {
+        const location = (item.location || 'pantry').toLowerCase();
+        if (counts[location] !== undefined) {
+          counts[location]++;
+        }
+      });
+      
+      document.getElementById('stat-total').textContent = counts.total;
+      document.getElementById('stat-pantry').textContent = counts.pantry;
+      document.getElementById('stat-refrigerator').textContent = counts.refrigerator;
+      document.getElementById('stat-freezer').textContent = counts.freezer;
+    }
+
+    function renderPantryItems() {
+      const container = document.getElementById('pantry-items');
+      
+      // Filter items
+      let filtered = pantryItems.filter(item => {
+        const matchesFilter = currentFilter === 'all' || 
+          (item.location || 'pantry').toLowerCase() === currentFilter;
+        const matchesSearch = !searchQuery || 
+          (item.ingredientName || item.name || '').toLowerCase().includes(searchQuery);
+        return matchesFilter && matchesSearch;
+      });
+      
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <p>${searchQuery || currentFilter !== 'all' ? 'No items match your filter' : 'Your pantry is empty. Add some items above!'}</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Group by location
+      const groups = {
+        pantry: { icon: '🧊', label: 'Pantry', items: [] },
+        refrigerator: { icon: '❄️', label: 'Refrigerator', items: [] },
+        freezer: { icon: '🥶', label: 'Freezer', items: [] }
+      };
+      
+      filtered.forEach(item => {
+        const location = (item.location || 'pantry').toLowerCase();
+        if (groups[location]) {
+          groups[location].items.push(item);
+        }
+      });
+      
+      // Render groups
+      let html = '';
+      for (const [key, group] of Object.entries(groups)) {
+        if (group.items.length === 0) continue;
+        
+        html += `
+          <div class="location-section" data-location="${key}">
+            <div class="location-header" onclick="toggleSection('${key}')">
+              <h3>${group.icon} ${group.label}</h3>
+              <span class="item-count">${group.items.length} items</span>
+            </div>
+            <div class="location-items" id="section-${key}">
+              ${group.items.map(item => renderPantryItem(item)).join('')}
+            </div>
+          </div>
+        `;
+      }
+      
+      container.innerHTML = html;
+    }
+
+    function renderPantryItem(item) {
+      const expirationStatus = getExpirationStatus(item.expirationDate);
+      const itemClass = expirationStatus === 'expired' ? 'expired' : 
+                        expirationStatus === 'warning' ? 'expiring-soon' : '';
+      
+      const expirationBadge = item.expirationDate ? 
+        `<span class="expiration-badge ${expirationStatus}">${formatExpirationText(item.expirationDate)}</span>` : '';
+      
+      return `
+        <div class="pantry-item ${itemClass}" data-id="${item.id}">
+          <input type="checkbox" onclick="markAsUsed('${item.id}')" title="Mark as used/remove">
+          <div class="item-info">
+            <span class="item-name">${escapeHtml(item.ingredientName || item.name)}</span>
+            <div class="item-details">
+              <span>${item.quantity || 1} ${item.unit || ''}</span>
+              ${expirationBadge}
+              ${item.notes ? `<span>• ${escapeHtml(item.notes)}</span>` : ''}
+            </div>
+          </div>
+          <div class="quantity-controls">
+            <button class="qty-btn" onclick="adjustQuantity('${item.id}', -1)">−</button>
+            <span class="qty-value">${item.quantity || 1}</span>
+            <button class="qty-btn" onclick="adjustQuantity('${item.id}', 1)">+</button>
+          </div>
+          <div class="item-actions">
+            <button class="action-btn" onclick="openEditModal('${item.id}')" title="Edit">✏️</button>
+            <button class="action-btn delete" onclick="deleteItem('${item.id}')" title="Delete">🗑️</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleSection(location) {
+      const section = document.getElementById(`section-${location}`);
+      section.classList.toggle('collapsed');
+    }
+
+    function getExpirationStatus(expirationDate) {
+      if (!expirationDate) return '';
+      const days = getDaysUntilExpiration(expirationDate);
+      if (days < 0) return 'expired';
+      if (days <= 7) return 'warning';
+      return '';
+    }
+
+    function getDaysUntilExpiration(expirationDate) {
+      const exp = new Date(expirationDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      exp.setHours(0, 0, 0, 0);
+      return Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function formatExpirationText(expirationDate) {
+      const days = getDaysUntilExpiration(expirationDate);
+      if (days < 0) return `Expired ${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} ago`;
+      if (days === 0) return 'Expires today';
+      if (days === 1) return 'Expires tomorrow';
+      return `Expires in ${days} days`;
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return '';
+      return new Date(dateString).toLocaleDateString();
+    }
+
+    async function handleAddItem(e) {
+      e.preventDefault();
+      
+      const ingredientName = document.getElementById('ingredient-name').value.trim();
+      const quantity = parseFloat(document.getElementById('quantity').value) || 1;
+      const unit = document.getElementById('unit').value;
+      const location = document.getElementById('location').value;
+      const purchaseDate = document.getElementById('purchase-date').value;
+      const expirationDate = document.getElementById('expiration-date').value;
+      const notes = document.getElementById('notes').value.trim();
+      
+      try {
+        const response = await fetch('/api/ingredients/pantry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ingredientName,
+            quantity,
+            unit,
+            location,
+            purchaseDate: purchaseDate || undefined,
+            expirationDate: expirationDate || undefined,
+            notes: notes || undefined
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to add item');
+        }
+        
+        // Reset form
+        document.getElementById('add-pantry-form').reset();
+        setDefaultDates();
+        
+        // Reload items
+        await loadPantryItems();
+        await loadExpiringItems();
+        
+        showToast('Item added to pantry!', 'success');
+      } catch (err) {
+        console.error('Error adding item:', err);
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function adjustQuantity(id, delta) {
+      const item = pantryItems.find(i => i.id === id);
+      if (!item) return;
+      
+      const newQuantity = Math.max(0, (item.quantity || 1) + delta);
+      
+      if (newQuantity === 0) {
+        if (confirm('Remove this item from pantry?')) {
+          await deleteItem(id);
+        }
+        return;
+      }
+      
+      try {
+        await fetch(`/api/ingredients/pantry/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quantity: newQuantity })
+        });
+        
+        item.quantity = newQuantity;
+        renderPantryItems();
+      } catch (err) {
+        console.error('Error adjusting quantity:', err);
+        showToast('Failed to update quantity', 'error');
+      }
+    }
+
+    async function markAsUsed(id) {
+      if (confirm('Mark this item as used and remove from pantry?')) {
+        await deleteItem(id);
+      }
+    }
+
+    async function deleteItem(id) {
+      try {
+        await fetch(`/api/ingredients/pantry/${id}`, { method: 'DELETE' });
+        
+        pantryItems = pantryItems.filter(i => i.id !== id);
+        updateStats();
+        renderPantryItems();
+        await loadExpiringItems();
+        
+        showToast('Item removed from pantry', 'success');
+      } catch (err) {
+        console.error('Error deleting item:', err);
+        showToast('Failed to remove item', 'error');
+      }
+    }
+
+    function openEditModal(id) {
+      const item = pantryItems.find(i => i.id === id);
+      if (!item) return;
+      
+      document.getElementById('edit-id').value = item.id;
+      document.getElementById('edit-name').value = item.ingredientName || item.name;
+      document.getElementById('edit-quantity').value = item.quantity || 1;
+      document.getElementById('edit-unit').value = item.unit || '';
+      document.getElementById('edit-location').value = item.location || 'pantry';
+      document.getElementById('edit-expiration').value = item.expirationDate ? 
+        item.expirationDate.split('T')[0] : '';
+      document.getElementById('edit-notes').value = item.notes || '';
+      
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    async function handleEditItem(e) {
+      e.preventDefault();
+      
+      const id = document.getElementById('edit-id').value;
+      const updates = {
+        quantity: parseFloat(document.getElementById('edit-quantity').value) || 1,
+        unit: document.getElementById('edit-unit').value,
+        location: document.getElementById('edit-location').value,
+        expirationDate: document.getElementById('edit-expiration').value || undefined,
+        notes: document.getElementById('edit-notes').value.trim() || undefined
+      };
+      
+      try {
+        await fetch(`/api/ingredients/pantry/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        
+        closeEditModal();
+        await loadPantryItems();
+        await loadExpiringItems();
+        
+        showToast('Item updated!', 'success');
+      } catch (err) {
+        console.error('Error updating item:', err);
+        showToast('Failed to update item', 'error');
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function showToast(message, type = 'info') {
+      // Check if there's a global showToast function from app.js
+      if (typeof window.showToast === 'function') {
+        window.showToast(message, type);
+        return;
+      }
+      
+      // Fallback toast implementation
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+        background: ${type === 'success' ? 'var(--success-bg)' : type === 'error' ? 'var(--error-bg)' : 'var(--toast-info-bg)'};
+        color: ${type === 'success' ? 'var(--success-text)' : type === 'error' ? 'var(--error-text)' : 'var(--toast-info-text)'};
+        border: 1px solid ${type === 'success' ? 'var(--success-border)' : type === 'error' ? 'var(--error-border)' : 'var(--toast-info-border)'};
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

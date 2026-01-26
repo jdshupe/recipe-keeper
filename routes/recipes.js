@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getAllRecipes, getRecipeBySlug, saveRecipe, deleteRecipe, generateSlug, getAllTags, renameTag, deleteTag, getRecipesByTag, checkForDuplicates } = require('../lib/recipes');
+const ingredients = require('../lib/ingredients');
 
 // POST /api/recipes/check-duplicates - Check for potential duplicate recipes
 router.post('/check-duplicates', async (req, res) => {
@@ -269,6 +270,94 @@ router.delete('/:slug', async (req, res) => {
   } catch (err) {
     console.error('Error deleting recipe:', err);
     res.status(500).json({ error: 'Failed to delete recipe', success: false });
+  }
+});
+
+// =====================
+// Pantry-Recipe Integration Routes
+// =====================
+
+// GET /api/recipes/pantry-match - Get recipes sorted by pantry match
+router.get('/pantry-match', async (req, res) => {
+  try {
+    const { minMatch = 0, limit = 20 } = req.query;
+    const allRecipes = await getAllRecipes();
+    const matched = await ingredients.getRecipesMatchingPantry(allRecipes);
+    
+    // Filter by minimum match percentage
+    const filtered = matched.filter(m => m.matchPercentage >= parseInt(minMatch));
+    
+    res.json({ 
+      data: filtered.slice(0, parseInt(limit)),
+      success: true 
+    });
+  } catch (err) {
+    console.error('Error matching recipes to pantry:', err);
+    res.status(500).json({ error: 'Failed to match recipes', success: false });
+  }
+});
+
+// GET /api/recipes/:slug/shopping-needed - Get shopping items needed for recipe
+router.get('/:slug/shopping-needed', async (req, res) => {
+  try {
+    const recipe = await getRecipeBySlug(req.params.slug);
+    if (!recipe) {
+      return res.status(404).json({ error: 'Recipe not found', success: false });
+    }
+    
+    const needed = await ingredients.getShoppingNeededForRecipe(recipe);
+    res.json({ data: needed, success: true });
+  } catch (err) {
+    console.error('Error getting shopping needed:', err);
+    res.status(500).json({ error: 'Failed to get shopping needed', success: false });
+  }
+});
+
+// GET /api/recipes/:slug/cost-estimate - Estimate recipe cost
+router.get('/:slug/cost-estimate', async (req, res) => {
+  try {
+    const recipe = await getRecipeBySlug(req.params.slug);
+    if (!recipe) {
+      return res.status(404).json({ error: 'Recipe not found', success: false });
+    }
+    
+    const estimate = await ingredients.estimateRecipeCost(recipe);
+    res.json({ data: estimate, success: true });
+  } catch (err) {
+    console.error('Error estimating cost:', err);
+    res.status(500).json({ error: 'Failed to estimate cost', success: false });
+  }
+});
+
+// GET /api/recipes/:slug/parsed-ingredients - Get parsed ingredients for a recipe
+router.get('/:slug/parsed-ingredients', async (req, res) => {
+  try {
+    const recipe = await getRecipeBySlug(req.params.slug);
+    if (!recipe) {
+      return res.status(404).json({ error: 'Recipe not found', success: false });
+    }
+    
+    if (!recipe.ingredients || !Array.isArray(recipe.ingredients)) {
+      return res.json({ data: [], success: true });
+    }
+    
+    const parsed = await Promise.all(
+      recipe.ingredients.map(async (ingredientStr) => {
+        const p = ingredients.parseIngredientString(ingredientStr);
+        const match = await ingredients.findIngredientByName(p.name);
+        const inPantry = await ingredients.isInPantry(p.name);
+        return {
+          ...p,
+          matchedIngredient: match,
+          inPantry
+        };
+      })
+    );
+    
+    res.json({ data: parsed, success: true });
+  } catch (err) {
+    console.error('Error parsing ingredients:', err);
+    res.status(500).json({ error: 'Failed to parse ingredients', success: false });
   }
 });
 

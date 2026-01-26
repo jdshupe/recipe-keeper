@@ -82,6 +82,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-01-26
+
+### Added
+- **Mobile Responsive Design**: Comprehensive mobile-friendly styling
+  - Hamburger menu navigation on phones/tablets
+  - Touch-friendly tap targets (min 44px)
+  - Better form and grid layouts on small screens
+  - Safe area insets for notched devices
+  - Landscape orientation optimizations
+- **Ingredient Database**: Structured ingredient data system
+  - Canonical ingredient names with aliases
+  - Auto-categorization into 9 grocery categories
+  - Allergen detection (dairy, eggs, fish, shellfish, tree nuts, peanuts, wheat, soy, sesame)
+  - Dietary flag detection (vegetarian, vegan, gluten-free, dairy-free)
+  - Unit parsing and normalization
+  - Price tracking per ingredient
+- **Pantry Management**: Track ingredients you have at home
+  - New page at `/pantry.html`
+  - Add items with quantity, unit, and storage location
+  - Track purchase and expiration dates
+  - Expiring/expired items alerts
+  - Quick quantity adjustments
+  - Filter by location (pantry, refrigerator, freezer)
+- **"What Can I Make?" Feature**: Recipe suggestions based on pantry
+  - New page at `/what-can-i-make.html`
+  - Shows recipes sorted by ingredient match percentage
+  - Displays missing ingredients for each recipe
+  - One-click "Add Missing to Shopping List" action
+- **Recipe-Pantry Integration**: 
+  - `/api/recipes/:slug/shopping-needed` - Get items needed from store
+  - `/api/recipes/:slug/parsed-ingredients` - Get parsed ingredient data with pantry status
+  - `/api/recipes/:slug/cost-estimate` - Estimate recipe cost based on price data
+- **New Keyboard Shortcuts**: 
+  - `P` for Pantry
+  - `W` for "What Can I Make?"
+
+### API Endpoints Added
+- `GET /api/ingredients` - Search/list all ingredients
+- `GET /api/ingredients/categories` - Get category definitions
+- `GET /api/ingredients/allergens` - Get allergen info
+- `GET /api/ingredients/units` - Get unit definitions
+- `POST /api/ingredients` - Create new ingredient
+- `PUT /api/ingredients/:id` - Update ingredient
+- `DELETE /api/ingredients/:id` - Delete ingredient
+- `POST /api/ingredients/:id/price` - Add price record
+- `POST /api/ingredients/parse` - Parse ingredient string
+- `GET /api/ingredients/pantry/items` - List pantry items
+- `GET /api/ingredients/pantry/expiring` - Get expiring items
+- `GET /api/ingredients/pantry/expired` - Get expired items
+- `POST /api/ingredients/pantry` - Add to pantry
+- `PUT /api/ingredients/pantry/:id` - Update pantry item
+- `DELETE /api/ingredients/pantry/:id` - Remove from pantry
+
+### Technical
+- New `lib/ingredients.js` module with comprehensive ingredient handling
+- New `routes/ingredients.js` API router
+- New `content/ingredients/` directory for ingredient and pantry data
+- ~1800 lines of new backend code
+- ~800 lines of new CSS for mobile responsiveness
+
+---
+
 ## [Unreleased]
 
 ### Planned

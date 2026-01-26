@@ -19,6 +19,8 @@ const SHORTCUTS = [
   { key: 'r', description: 'All recipes', action: () => window.location.href = '/recipes.html' },
   { key: 's', description: 'Shopping lists', action: () => window.location.href = '/shopping-lists.html' },
   { key: 'c', description: 'Collections', action: () => window.location.href = '/collections.html' },
+  { key: 'p', description: 'Pantry', action: () => window.location.href = '/pantry.html' },
+  { key: 'w', description: 'What can I make?', action: () => window.location.href = '/what-can-i-make.html' },
   { key: '?', description: 'Show shortcuts', action: () => toggleShortcutsModal() },
   { key: 'Escape', description: 'Close modal', action: () => closeShortcutsModal() }
 ];
@@ -2994,3 +2996,79 @@ function setupImageUpload() {
     }
   }
 }
+
+// =====================
+// Mobile Navigation
+// =====================
+
+function initMobileNav() {
+  // Create hamburger button if it doesn't exist
+  const nav = document.querySelector('nav .container');
+  if (!nav) return;
+  
+  let hamburger = document.querySelector('.hamburger-btn');
+  if (!hamburger) {
+    hamburger = document.createElement('button');
+    hamburger.className = 'hamburger-btn';
+    hamburger.setAttribute('aria-label', 'Toggle navigation menu');
+    hamburger.setAttribute('aria-expanded', 'false');
+    hamburger.innerHTML = '<span></span><span></span><span></span>';
+    nav.appendChild(hamburger);
+  }
+  
+  // Create overlay if it doesn't exist
+  let overlay = document.querySelector('.mobile-nav-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.className = 'mobile-nav-overlay';
+    document.body.appendChild(overlay);
+  }
+  
+  const navLinks = document.querySelector('.nav-links');
+  
+  // Toggle menu
+  function toggleMobileMenu() {
+    const isOpen = navLinks.classList.toggle('active');
+    hamburger.classList.toggle('active', isOpen);
+    overlay.classList.toggle('active', isOpen);
+    hamburger.setAttribute('aria-expanded', isOpen);
+    
+    // Prevent body scroll when menu is open
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+  }
+  
+  // Close menu
+  function closeMobileMenu() {
+    navLinks.classList.remove('active');
+    hamburger.classList.remove('active');
+    overlay.classList.remove('active');
+    hamburger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+  
+  // Event listeners
+  hamburger.addEventListener('click', toggleMobileMenu);
+  overlay.addEventListener('click', closeMobileMenu);
+  
+  // Close menu when clicking a nav link
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', closeMobileMenu);
+  });
+  
+  // Close menu on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navLinks.classList.contains('active')) {
+      closeMobileMenu();
+    }
+  });
+  
+  // Close menu on window resize if it's open and we're past mobile breakpoint
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768 && navLinks.classList.contains('active')) {
+      closeMobileMenu();
+    }
+  });
+}
+
+// Initialize mobile nav on DOM ready
+document.addEventListener('DOMContentLoaded', initMobileNav);

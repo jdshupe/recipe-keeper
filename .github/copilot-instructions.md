@@ -27,11 +27,13 @@ recipe-keeper/
 │   ├── recipes.js         # Recipe CRUD + duplicate detection
 │   ├── shopping-lists.js  # Shopping list CRUD operations
 │   ├── collections.js     # Collection CRUD operations
+│   ├── ingredients.js     # Ingredient database + pantry management
 │   └── scraper.js         # URL recipe scraper
 ├── routes/
-│   ├── recipes.js         # /api/recipes endpoints
+│   ├── recipes.js         # /api/recipes endpoints + pantry integration
 │   ├── shopping-lists.js  # /api/shopping-lists endpoints
 │   ├── collections.js     # /api/collections endpoints
+│   ├── ingredients.js     # /api/ingredients + pantry endpoints
 │   ├── scrape.js          # /api/scrape endpoint
 │   └── upload.js          # /api/upload - image upload (multer)
 ├── public/
@@ -44,15 +46,18 @@ recipe-keeper/
 │   ├── tags.html          # Tag management
 │   ├── collections.html   # Collection list
 │   ├── collection.html    # Collection detail
+│   ├── pantry.html        # Pantry management
+│   ├── what-can-i-make.html  # Recipe suggestions by pantry
 │   ├── shopping-lists.html      # Shopping lists overview
 │   ├── shopping-list.html       # Shopping list detail
 │   ├── shopping-list-new.html   # Create new list form
-│   ├── css/style.css      # Stylesheet (~3100 lines, CSS variables for theming)
-│   └── js/app.js          # Client-side JavaScript (~3000 lines)
+│   ├── css/style.css      # Stylesheet (~4400 lines, CSS variables for theming, mobile responsive)
+│   └── js/app.js          # Client-side JavaScript (~3100 lines)
 └── content/
     ├── recipes/           # Markdown recipe files
     ├── shopping-lists/    # JSON shopping list files
-    └── collections/       # JSON collection files
+    ├── collections/       # JSON collection files
+    └── ingredients/       # Ingredient database + pantry JSON files
 ```
 
 ## API Endpoints
@@ -101,6 +106,33 @@ recipe-keeper/
 ### Upload
 - `POST /api/upload` - Upload image (multipart/form-data, field: 'image')
 - `DELETE /api/upload/:filename` - Delete uploaded image
+
+### Ingredients & Pantry
+- `GET /api/ingredients` - Search/list ingredients
+- `GET /api/ingredients/categories` - Category definitions
+- `GET /api/ingredients/allergens` - Allergen info
+- `GET /api/ingredients/units` - Unit definitions
+- `GET /api/ingredients/:id` - Get single ingredient
+- `POST /api/ingredients` - Create ingredient
+- `PUT /api/ingredients/:id` - Update ingredient
+- `DELETE /api/ingredients/:id` - Delete ingredient
+- `POST /api/ingredients/:id/price` - Add price record
+- `POST /api/ingredients/parse` - Parse ingredient string
+- `POST /api/ingredients/parse-bulk` - Parse multiple strings
+- `POST /api/ingredients/find-or-create` - Get or create by name
+- `GET /api/ingredients/pantry/items` - List pantry items
+- `GET /api/ingredients/pantry/expiring?days=7` - Expiring items
+- `GET /api/ingredients/pantry/expired` - Expired items
+- `POST /api/ingredients/pantry` - Add to pantry
+- `PUT /api/ingredients/pantry/:id` - Update pantry item
+- `DELETE /api/ingredients/pantry/:id` - Remove from pantry
+- `GET /api/ingredients/pantry/check/:name` - Check if in pantry
+
+### Recipe-Pantry Integration
+- `GET /api/recipes/pantry-match` - Recipes sorted by pantry match %
+- `GET /api/recipes/:slug/shopping-needed` - Items needed from store
+- `GET /api/recipes/:slug/cost-estimate` - Estimate recipe cost
+- `GET /api/recipes/:slug/parsed-ingredients` - Parsed ingredients with pantry status
 
 ## Recipe Format
 Recipes are stored as markdown files with YAML frontmatter:
@@ -198,6 +230,28 @@ The app runs at http://localhost:3000
 - Dark theme, large text for kitchen visibility
 - Swipe gestures + keyboard navigation
 - Collapsible ingredients sidebar
+
+### Mobile Responsive Design
+- Hamburger menu navigation on screens < 768px
+- Touch-friendly tap targets (min 44px)
+- CSS-only menu toggle with JS enhancements
+- Safe area insets for notched devices (iPhone X+)
+- Landscape orientation optimizations
+
+### Ingredient Database (lib/ingredients.js)
+- Canonical ingredient storage with aliases
+- 9 categories: produce, dairy, meat, bakery, pantry, spices, frozen, beverages, other
+- Auto-detection of allergens (9 types) and dietary flags
+- Unit parsing and normalization
+- Price tracking with history
+- Recipe-pantry matching for "What Can I Make?"
+
+### Pantry Management (/pantry.html)
+- Track ingredients on hand with quantities
+- Storage locations: pantry, refrigerator, freezer
+- Expiration date tracking with alerts
+- Quick quantity adjustments
+- Filter by location
 
 ## Libraries (package.json)
 - `express` ^4.18.2 - Web server

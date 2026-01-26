@@ -6,6 +6,7 @@ const shoppingListRoutes = require('./routes/shopping-lists');
 const scrapeRoutes = require('./routes/scrape');
 const collectionsRoutes = require('./routes/collections');
 const uploadRoutes = require('./routes/upload');
+const ingredientsRoutes = require('./routes/ingredients');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +21,7 @@ app.use('/api/shopping-lists', shoppingListRoutes);
 app.use('/api/scrape', scrapeRoutes);
 app.use('/api/collections', collectionsRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/ingredients', ingredientsRoutes);
 
 // Serve HTML pages
 app.get('/', (req, res) => {
@@ -53,6 +55,14 @@ app.get('/shopping-list/new', (req, res) => {
 
 app.get('/shopping-list/:id', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'shopping-list.html'));
+});
+
+app.get('/pantry', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'pantry.html'));
+});
+
+app.get('/what-can-i-make', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'what-can-i-make.html'));
 });
 
 app.listen(PORT, () => {

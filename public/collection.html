@@ -17,16 +17,23 @@
   <nav>
     <div class="container">
       <a href="/" class="logo">🍳 Recipe Keeper</a>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/recipes.html">Recipes</a>
         <a href="/collections.html" class="active">Collections</a>
         <a href="/shopping-lists.html">Shopping Lists</a>
+        <a href="/pantry.html">Pantry</a>
         <a href="/add-recipe.html" class="btn btn-primary btn-small">+ Add Recipe</a>
       </div>
       <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
     </div>
   </nav>
+  <div class="mobile-nav-overlay"></div>
 
   <main class="container">
     <a href="/collections.html" class="back-link">← Back to Collections</a>

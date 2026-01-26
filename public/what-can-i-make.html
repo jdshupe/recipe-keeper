@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What Can I Make? - Recipe Keeper</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    // Apply dark mode immediately to prevent flash
+    if (localStorage.getItem('darkMode') === 'true' || 
+        (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+  <style>
+    /* What Can I Make? specific styles */
+    .filter-section {
+      background: var(--bg-card);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-card);
+    }
+
+    .filter-section h3 {
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-row label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+    }
+
+    .filter-row select {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+
+    .results-count {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    /* Match card styling */
+    .match-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-card);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .match-card:hover {
+      box-shadow: var(--shadow-card-hover);
+      transform: translateY(-2px);
+    }
+
+    .match-card-image {
+      height: 160px;
+      background: var(--placeholder-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: var(--placeholder-icon);
+      position: relative;
+    }
+
+    .match-card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .match-badge {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .match-badge.excellent {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--success-border);
+    }
+
+    .match-badge.good {
+      background: #e3f2fd;
+      color: #1565c0;
+      border: 1px solid #90caf9;
+    }
+
+    .dark-mode .match-badge.good {
+      background: #1a3a5c;
+      color: #79c0ff;
+      border-color: #1f6feb;
+    }
+
+    .match-badge.partial {
+      background: #fff8e1;
+      color: #f57c00;
+      border: 1px solid #ffe082;
+    }
+
+    .dark-mode .match-badge.partial {
+      background: #3d3014;
+      color: #ffb74d;
+      border-color: #5c4d1f;
+    }
+
+    .match-badge.low {
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      border: 1px solid var(--border-color);
+    }
+
+    .match-card-body {
+      padding: 1rem 1.25rem;
+    }
+
+    .match-card-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-heading);
+    }
+
+    .match-card-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .match-card-title a:hover {
+      color: var(--accent-primary);
+    }
+
+    .ingredient-count {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .ingredient-count .available {
+      color: var(--success-text);
+      font-weight: 500;
+    }
+
+    .missing-section {
+      border-top: 1px solid var(--border-light);
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+    }
+
+    .missing-toggle {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0;
+      width: 100%;
+      text-align: left;
+    }
+
+    .missing-toggle:hover {
+      color: var(--text-primary);
+    }
+
+    .missing-toggle .chevron {
+      transition: transform 0.2s;
+    }
+
+    .missing-toggle.expanded .chevron {
+      transform: rotate(180deg);
+    }
+
+    .missing-list {
+      display: none;
+      margin-top: 0.5rem;
+      padding-left: 1rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .missing-list.show {
+      display: block;
+    }
+
+    .missing-list li {
+      padding: 0.25rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .missing-list li::before {
+      content: "•";
+      color: var(--error-text);
+    }
+
+    .match-card-actions {
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .match-card-actions .btn {
+      flex: 1;
+      min-width: 120px;
+      justify-content: center;
+    }
+
+    /* Empty state */
+    .empty-pantry-message {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border-light);
+    }
+
+    .empty-pantry-message .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    .empty-pantry-message h2 {
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-pantry-message p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Progress bar for match */
+    .match-progress {
+      height: 4px;
+      background: var(--progress-bg);
+      border-radius: 2px;
+      margin-top: 0.5rem;
+      overflow: hidden;
+    }
+
+    .match-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .match-progress-fill.excellent {
+      background: var(--success-accent);
+    }
+
+    .match-progress-fill.good {
+      background: #2196f3;
+    }
+
+    .match-progress-fill.partial {
+      background: #ff9800;
+    }
+
+    .match-progress-fill.low {
+      background: var(--text-light);
+    }
+
+    /* Stats section */
+    .match-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .match-stat {
+      background: var(--bg-card);
+      padding: 1rem;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border-light);
+    }
+
+    .match-stat .stat-icon {
+      font-size: 1.5rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .match-stat .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text-heading);
+      display: block;
+    }
+
+    .match-stat .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <a href="/" class="logo">🍳 Recipe Keeper</a>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/recipes.html">Recipes</a>
+        <a href="/collections.html">Collections</a>
+        <a href="/shopping-lists.html">Shopping Lists</a>
+        <a href="/pantry.html">Pantry</a>
+        <a href="/what-can-i-make.html" class="active">What Can I Make?</a>
+        <a href="/add-recipe.html" class="btn btn-primary btn-small">+ Add Recipe</a>
+      </div>
+      <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
+    </div>
+  </nav>
+  <div class="mobile-nav-overlay"></div>
+
+  <main class="container">
+    <h1>🍽️ What Can I Make?</h1>
+    <p class="text-muted mb-2">Discover recipes you can make with ingredients you already have in your pantry.</p>
+
+    <!-- Stats Section -->
+    <div class="match-stats" id="match-stats">
+      <div class="match-stat">
+        <span class="stat-icon">✅</span>
+        <span class="stat-value" id="stat-ready">-</span>
+        <span class="stat-label">Ready to Cook</span>
+      </div>
+      <div class="match-stat">
+        <span class="stat-icon">🛒</span>
+        <span class="stat-value" id="stat-almost">-</span>
+        <span class="stat-label">Almost Ready</span>
+      </div>
+      <div class="match-stat">
+        <span class="stat-icon">📦</span>
+        <span class="stat-value" id="stat-pantry-items">-</span>
+        <span class="stat-label">Pantry Items</span>
+      </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <h3>🔍 Filter Recipes</h3>
+      <div class="filter-row">
+        <label>
+          Minimum Match:
+          <select id="min-match-filter">
+            <option value="0">Show All</option>
+            <option value="25">25% or more</option>
+            <option value="50">50% or more</option>
+            <option value="75">75% or more</option>
+            <option value="100">100% (Ready to cook)</option>
+          </select>
+        </label>
+        <span class="results-count" id="results-count"></span>
+      </div>
+    </div>
+
+    <!-- Empty Pantry Message (hidden by default) -->
+    <div class="empty-pantry-message hidden" id="empty-pantry">
+      <div class="icon">🥫</div>
+      <h2>Your Pantry is Empty</h2>
+      <p>Add some ingredients to your pantry to see which recipes you can make!</p>
+      <a href="/pantry.html" class="btn btn-primary">Go to Pantry →</a>
+    </div>
+
+    <!-- Results Grid -->
+    <div id="match-results" class="grid grid-3">
+      <div class="loading"><span class="spinner"></span> Analyzing your pantry...</div>
+    </div>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let allMatches = [];
+    let shoppingLists = [];
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPantryMatches();
+      loadShoppingLists();
+      
+      // Filter change handler
+      document.getElementById('min-match-filter').addEventListener('change', filterAndDisplayMatches);
+    });
+
+    async function loadPantryMatches() {
+      try {
+        const result = await api('/recipes/pantry-match?limit=100');
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to load matches');
+        }
+
+        allMatches = result.data;
+        
+        // Check if pantry is empty (all matches have 0%)
+        const pantryResult = await api('/ingredients/pantry');
+        const pantryItems = pantryResult.success ? pantryResult.data : [];
+        
+        // Update stats
+        updateStats(allMatches, pantryItems);
+        
+        if (pantryItems.length === 0) {
+          document.getElementById('empty-pantry').classList.remove('hidden');
+          document.getElementById('match-results').innerHTML = '';
+          document.getElementById('match-stats').classList.add('hidden');
+          document.querySelector('.filter-section').classList.add('hidden');
+          return;
+        }
+        
+        filterAndDisplayMatches();
+      } catch (err) {
+        console.error('Error loading pantry matches:', err);
+        document.getElementById('match-results').innerHTML = `
+          <div class="error-message">
+            <p>Failed to load recipe matches. Please try again.</p>
+            <button class="btn btn-secondary" onclick="loadPantryMatches()">Retry</button>
+          </div>
+        `;
+      }
+    }
+
+    async function loadShoppingLists() {
+      try {
+        const result = await api('/shopping-lists');
+        if (result.success) {
+          shoppingLists = result.data;
+        }
+      } catch (err) {
+        console.error('Error loading shopping lists:', err);
+      }
+    }
+
+    function updateStats(matches, pantryItems) {
+      const readyToCook = matches.filter(m => m.matchPercentage === 100).length;
+      const almostReady = matches.filter(m => m.matchPercentage >= 75 && m.matchPercentage < 100).length;
+      const pantryCount = pantryItems.filter(p => p.quantity > 0).length;
+      
+      document.getElementById('stat-ready').textContent = readyToCook;
+      document.getElementById('stat-almost').textContent = almostReady;
+      document.getElementById('stat-pantry-items').textContent = pantryCount;
+    }
+
+    function filterAndDisplayMatches() {
+      const minMatch = parseInt(document.getElementById('min-match-filter').value);
+      const filtered = allMatches.filter(m => m.matchPercentage >= minMatch);
+      
+      document.getElementById('results-count').textContent = 
+        `Showing ${filtered.length} of ${allMatches.length} recipes`;
+      
+      displayMatches(filtered);
+    }
+
+    function getMatchClass(percentage) {
+      if (percentage === 100) return 'excellent';
+      if (percentage >= 75) return 'good';
+      if (percentage >= 50) return 'partial';
+      return 'low';
+    }
+
+    function displayMatches(matches) {
+      const container = document.getElementById('match-results');
+      
+      if (matches.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+            <p class="text-muted">No recipes match your current filter. Try lowering the minimum match percentage.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = matches.map(match => {
+        const recipe = match.recipe;
+        const matchClass = getMatchClass(match.matchPercentage);
+        const imageHtml = recipe.image 
+          ? `<img src="${recipe.image}" alt="${escapeHtml(recipe.title)}" loading="lazy">`
+          : '🍽️';
+        
+        const missingHtml = match.missing.length > 0 ? `
+          <div class="missing-section">
+            <button class="missing-toggle" onclick="toggleMissing(this, event)">
+              <span class="chevron">▼</span>
+              <span>${match.missing.length} missing ingredient${match.missing.length > 1 ? 's' : ''}</span>
+            </button>
+            <ul class="missing-list">
+              ${match.missing.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+            </ul>
+          </div>
+        ` : '';
+
+        const addToShoppingBtn = match.missing.length > 0 ? `
+          <button class="btn btn-secondary btn-small" onclick="addMissingToShoppingList('${recipe.slug}', event)">
+            🛒 Add Missing
+          </button>
+        ` : '';
+
+        return `
+          <div class="match-card">
+            <div class="match-card-image">
+              ${imageHtml}
+              <span class="match-badge ${matchClass}">${match.matchPercentage}% match</span>
+            </div>
+            <div class="match-card-body">
+              <h3 class="match-card-title">
+                <a href="/recipes/${recipe.slug}">${escapeHtml(recipe.title)}</a>
+              </h3>
+              <div class="ingredient-count">
+                <span class="available">${match.available} of ${match.total}</span> ingredients available
+              </div>
+              <div class="match-progress">
+                <div class="match-progress-fill ${matchClass}" style="width: ${match.matchPercentage}%"></div>
+              </div>
+              ${missingHtml}
+            </div>
+            <div class="match-card-actions">
+              <a href="/recipes/${recipe.slug}" class="btn btn-primary btn-small">View Recipe</a>
+              ${addToShoppingBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleMissing(button, event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      button.classList.toggle('expanded');
+      const list = button.nextElementSibling;
+      list.classList.toggle('show');
+    }
+
+    async function addMissingToShoppingList(recipeSlug, event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      try {
+        // Get the missing ingredients for this recipe
+        const match = allMatches.find(m => m.recipe.slug === recipeSlug);
+        if (!match || match.missing.length === 0) {
+          showToast('No missing ingredients to add', 'info');
+          return;
+        }
+
+        // Check if there are any shopping lists
+        if (shoppingLists.length === 0) {
+          // Create a new shopping list
+          const createResult = await api('/shopping-lists', {
+            method: 'POST',
+            body: JSON.stringify({ name: 'Shopping List' })
+          });
+          
+          if (createResult.success) {
+            shoppingLists.push(createResult.data);
+          } else {
+            throw new Error('Failed to create shopping list');
+          }
+        }
+
+        // Use the first shopping list (most recent)
+        const listId = shoppingLists[0].id;
+        
+        // Add missing ingredients as custom items
+        let addedCount = 0;
+        for (const ingredient of match.missing) {
+          try {
+            await api(`/shopping-lists/${listId}/custom-item`, {
+              method: 'POST',
+              body: JSON.stringify({ 
+                name: ingredient,
+                notes: `For: ${match.recipe.title}`
+              })
+            });
+            addedCount++;
+          } catch (err) {
+            console.error('Error adding ingredient:', err);
+          }
+        }
+
+        if (addedCount > 0) {
+          showToast(`Added ${addedCount} item${addedCount > 1 ? 's' : ''} to shopping list`, 'success');
+        } else {
+          showToast('Failed to add items', 'error');
+        }
+      } catch (err) {
+        console.error('Error adding to shopping list:', err);
+        showToast('Failed to add to shopping list', 'error');
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
