@@ -740,6 +740,17 @@ router.get('/barcode/:barcode', async (req, res) => {
     // Fetch from Open Food Facts API
     const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
     
+    // Handle 404 - product not in database
+    if (response.status === 404) {
+      return res.status(404).json({
+        found: false,
+        error: 'Product not found',
+        message: 'This barcode was not found in the Open Food Facts database. You can add it manually.',
+        barcode
+      });
+    }
+    
+    // Handle other non-OK responses
     if (!response.ok) {
       throw new Error(`Open Food Facts API error: ${response.status}`);
     }
