@@ -78,14 +78,14 @@
       align-items: center;
       gap: 0.75rem;
       padding: 0.75rem;
-      background: var(--card-bg);
+      background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 8px;
       transition: border-color 0.15s;
     }
     
     .ingredient-row:hover {
-      border-color: var(--primary-color);
+      border-color: var(--accent-primary);
     }
     
     .ingredient-row .drag-handle {
@@ -103,13 +103,13 @@
       border: none;
       background: transparent;
       font-size: 1rem;
-      color: var(--text-color);
+      color: var(--text-primary);
       padding: 0.25rem 0;
       outline: none;
     }
     
     .ingredient-text-input:focus {
-      border-bottom: 2px solid var(--primary-color);
+      border-bottom: 2px solid var(--accent-primary);
     }
     
     .ingredient-delete-btn {
@@ -125,7 +125,7 @@
     
     .ingredient-delete-btn:hover {
       opacity: 1;
-      color: var(--danger-color);
+      color: var(--error-text);
     }
     
     .add-ingredient-btn {
@@ -145,17 +145,78 @@
     }
     
     .add-ingredient-btn:hover {
-      border-color: var(--primary-color);
-      color: var(--primary-color);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
     }
     
     /* Ingredient Picker Modal */
+    .ingredient-picker-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .ingredient-picker-modal.hidden {
+      display: none;
+    }
+    
+    .ingredient-picker-modal .modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+    }
+    
     .ingredient-picker-modal .modal-content {
-      max-width: 500px;
+      position: relative;
+      background: var(--bg-card);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 450px;
+      max-height: 90vh;
+      overflow: visible;
+      box-shadow: var(--shadow-lg);
+      z-index: 1;
+    }
+    
+    .ingredient-picker-modal .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .ingredient-picker-modal .modal-header h2 {
+      margin: 0;
+      font-size: 1.125rem;
+      color: var(--text-primary);
+    }
+    
+    .ingredient-picker-modal .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0;
+      line-height: 1;
+    }
+    
+    .ingredient-picker-modal .modal-close:hover {
+      color: var(--text-primary);
     }
     
     .ingredient-picker-modal .modal-body {
-      padding: 1.5rem;
+      padding: 1.25rem;
     }
     
     .ingredient-search-container {
@@ -169,13 +230,14 @@
       font-size: 1rem;
       border: 2px solid var(--border-color);
       border-radius: 8px;
-      background: var(--input-bg);
-      color: var(--text-color);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      box-sizing: border-box;
     }
     
     .ingredient-search-input:focus {
       outline: none;
-      border-color: var(--primary-color);
+      border-color: var(--accent-primary);
     }
     
     .ingredient-suggestions {
@@ -183,14 +245,15 @@
       top: 100%;
       left: 0;
       right: 0;
-      background: var(--card-bg);
+      background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      max-height: 250px;
+      box-shadow: var(--shadow-lg);
+      max-height: 200px;
       overflow-y: auto;
-      z-index: 10;
+      z-index: 100;
       display: none;
+      margin-top: 4px;
     }
     
     .ingredient-suggestions.visible {
@@ -200,7 +263,7 @@
     .ingredient-suggestion {
       padding: 0.75rem 1rem;
       cursor: pointer;
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-light);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -210,16 +273,14 @@
       border-bottom: none;
     }
     
-    .ingredient-suggestion:hover {
-      background: var(--primary-light);
-    }
-    
+    .ingredient-suggestion:hover,
     .ingredient-suggestion.selected {
-      background: var(--primary-light);
+      background: var(--accent-primary-light);
     }
     
     .ingredient-suggestion-name {
       font-weight: 500;
+      color: var(--text-primary);
     }
     
     .ingredient-suggestion-category {
@@ -235,15 +296,16 @@
     }
     
     .picker-current-ingredient {
-      background: var(--primary-light);
+      background: var(--accent-primary-light);
       padding: 0.75rem 1rem;
       border-radius: 8px;
       margin-bottom: 1rem;
       font-size: 0.9rem;
+      color: var(--text-primary);
     }
     
     .picker-current-ingredient strong {
-      color: var(--primary-color);
+      color: var(--accent-primary);
     }
     
     .picker-actions {
@@ -257,6 +319,7 @@
     
     .picker-actions .btn {
       justify-content: center;
+      text-align: center;
     }
     
     /* Match confidence tooltip */
@@ -280,6 +343,7 @@
       pointer-events: none;
       transition: opacity 0.15s;
       z-index: 100;
+      margin-bottom: 4px;
     }
     
     .match-tooltip:hover::after {
@@ -296,9 +360,84 @@
       font-size: 0.75rem;
       color: var(--text-muted);
       margin-left: 0.5rem;
-      background: var(--primary-light);
+      background: var(--accent-primary-light);
       padding: 0.125rem 0.5rem;
       border-radius: 4px;
+    }
+    
+    /* Create Ingredient Modal */
+    #create-ingredient-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #create-ingredient-modal.hidden {
+      display: none;
+    }
+    
+    #create-ingredient-modal .modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+    }
+    
+    #create-ingredient-modal .modal-content {
+      position: relative;
+      background: var(--bg-card);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 450px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      z-index: 1;
+    }
+    
+    #create-ingredient-modal .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    #create-ingredient-modal .modal-header h2 {
+      margin: 0;
+      font-size: 1.125rem;
+      color: var(--text-primary);
+    }
+    
+    #create-ingredient-modal .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0;
+      line-height: 1;
+    }
+    
+    #create-ingredient-modal .modal-body {
+      padding: 1.25rem;
+    }
+    
+    #create-ingredient-modal .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
     }
   </style>
 </head>
