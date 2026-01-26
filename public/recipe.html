@@ -450,6 +450,9 @@
       // Initialize scaling system
       initScaling(recipe);
       
+      // Register enriched ingredient renderer for scaling
+      setEnrichedIngredientRenderer(renderEnrichedIngredients);
+      
       // Load collections for this recipe
       const collectionsResult = await api(`/collections/for-recipe/${slug}`);
       const recipeCollections = collectionsResult.success ? collectionsResult.data : [];

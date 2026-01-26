@@ -16,13 +16,13 @@ image: >-
   https://www.isabeleats.com/wp-content/uploads/2020/05/chicken-enchiladas-2020-small-3.jpg
 ingredients:
   - originalText: 1 ½ cups cooked shredded chicken
-    ingredientId: null
-    matchConfidence: none
+    ingredientId: 4ac61bb1-e404-4369-ad0c-3c2139681067
+    matchConfidence: exact
     quantity: 1
     unit: null
     name: ½ cups cooked shredded chicken
     preparation: null
-    linkedName: null
+    linkedName: Chicken
   - originalText: '2 cups easy enchilada sauce, (divided)'
     ingredientId: null
     matchConfidence: none

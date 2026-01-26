@@ -662,11 +662,43 @@ function parseServingsValue(servingsStr) {
   return null;
 }
 
+// Store enriched recipe for scaling with full context
+let enrichedRecipeData = null;
+// Custom renderer function for enriched ingredients (set by page)
+let enrichedIngredientRenderer = null;
+
 // Initialize scaling for a recipe
 function initScaling(recipe) {
   originalIngredients = recipe.ingredients || [];
+  enrichedRecipeData = recipe; // Store full recipe for enriched rendering
   originalServings = parseServingsValue(recipe.servings) || 4; // Default to 4 if not specified
   currentServings = originalServings;
+}
+
+// Set a custom renderer for enriched ingredients (called from recipe.html)
+function setEnrichedIngredientRenderer(rendererFn) {
+  enrichedIngredientRenderer = rendererFn;
+}
+
+// Scale a structured/enriched ingredient
+function scaleStructuredIngredient(ing, scaleFactor) {
+  // Deep clone to avoid modifying original
+  const scaled = JSON.parse(JSON.stringify(ing));
+  
+  // Scale the quantity if present
+  if (scaled.quantity) {
+    const qty = parseFloat(scaled.quantity);
+    if (!isNaN(qty)) {
+      scaled.quantity = decimalToFraction(qty * scaleFactor);
+    }
+  }
+  
+  // Also scale the originalText if it has a quantity
+  if (scaled.originalText) {
+    scaled.originalText = scaleIngredient(scaled.originalText, scaleFactor);
+  }
+  
+  return scaled;
 }
 
 // Update the displayed ingredients based on current scaling
@@ -677,15 +709,44 @@ function updateScaledIngredients() {
   const list = document.getElementById('ingredient-list');
   if (!list) return;
   
-  list.innerHTML = originalIngredients.map((ing, i) => {
-    const scaledIng = scaleIngredient(ing, scaleFactor);
-    return `
-      <li onclick="this.classList.toggle('checked')">
-        <input type="checkbox" id="ing-${i}">
-        <span class="text">${scaledIng}</span>
-      </li>
-    `;
-  }).join('');
+  // Check if we have enriched ingredients and a custom renderer
+  const hasEnrichedIngredients = enrichedRecipeData && 
+    (enrichedRecipeData.enrichedIngredients || 
+     (enrichedRecipeData.ingredients && enrichedRecipeData.ingredients.length > 0 && 
+      typeof enrichedRecipeData.ingredients[0] === 'object'));
+  
+  if (hasEnrichedIngredients && enrichedIngredientRenderer) {
+    // Use enriched rendering with scaled ingredients
+    const ingredients = enrichedRecipeData.enrichedIngredients || enrichedRecipeData.ingredients || [];
+    const scaledIngredients = ingredients.map(ing => {
+      if (typeof ing === 'string') {
+        return scaleIngredient(ing, scaleFactor);
+      }
+      return scaleStructuredIngredient(ing, scaleFactor);
+    });
+    
+    // Create a scaled version of the recipe for the renderer
+    const scaledRecipe = {
+      ...enrichedRecipeData,
+      enrichedIngredients: scaledIngredients,
+      ingredients: scaledIngredients
+    };
+    
+    list.innerHTML = enrichedIngredientRenderer(scaledRecipe);
+  } else {
+    // Fallback: simple rendering for old-format ingredients
+    list.innerHTML = originalIngredients.map((ing, i) => {
+      const scaledIng = typeof ing === 'string' 
+        ? scaleIngredient(ing, scaleFactor)
+        : scaleIngredient(ing.originalText || formatSimpleIngredient(ing), scaleFactor);
+      return `
+        <li onclick="this.classList.toggle('checked')">
+          <input type="checkbox" id="ing-${i}">
+          <span class="text">${scaledIng}</span>
+        </li>
+      `;
+    }).join('');
+  }
   
   // Update scale indicator
   const indicator = document.getElementById('scale-indicator');
@@ -703,6 +764,16 @@ function updateScaledIngredients() {
   if (servingsDisplay) {
     servingsDisplay.textContent = currentServings;
   }
+}
+
+// Simple ingredient formatter for fallback
+function formatSimpleIngredient(ing) {
+  let text = '';
+  if (ing.quantity) text += ing.quantity + ' ';
+  if (ing.unit) text += ing.unit + ' ';
+  text += ing.name || 'Unknown ingredient';
+  if (ing.preparation) text += ', ' + ing.preparation;
+  return text.trim();
 }
 
 // Adjust servings by delta
