@@ -1,6 +1,6 @@
 ---
-title: Easy Chicken Enchiladas
 slug: easy-chicken-enchiladas
+title: Easy Chicken Enchiladas
 source: 'https://www.isabeleats.com/red-chicken-enchiladas/'
 image: >-
   https://www.isabeleats.com/wp-content/uploads/2020/05/chicken-enchiladas-2020-small-3.jpg
@@ -42,5 +42,6 @@ instructions:
     is melted and bubbly.
   - Serve immediately and garnish with desired toppings.
 dateAdded: '2026-01-08T17:42:41.738Z'
+favorite: true
 ---
 
