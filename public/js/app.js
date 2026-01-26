@@ -1278,6 +1278,38 @@ async function loadRecipe(slug) {
             </ul>
           </div>
         </div>
+        
+        <!-- Nutrition Panel -->
+        <div class="card mt-2 nutrition-card">
+          <div class="card-body">
+            <button class="nutrition-toggle" onclick="toggleNutritionPanel(this)">
+              <span class="nutrition-toggle-icon">📊</span>
+              <span>Nutrition Information</span>
+              <span class="chevron">▼</span>
+            </button>
+            <div class="nutrition-content hidden" id="nutrition-content">
+              <div class="nutrition-loading">
+                <span class="spinner"></span> Calculating nutrition...
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Cost Estimate Panel -->
+        <div class="card mt-2 cost-card">
+          <div class="card-body">
+            <button class="cost-toggle" onclick="toggleCostPanel(this)">
+              <span class="cost-toggle-icon">💰</span>
+              <span>Estimated Cost</span>
+              <span class="chevron">▼</span>
+            </button>
+            <div class="cost-content hidden" id="cost-content">
+              <div class="cost-loading">
+                <span class="spinner"></span> Calculating cost...
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div>
@@ -1330,6 +1362,240 @@ async function loadRecipe(slug) {
       <button onclick="window.print()" class="btn btn-secondary print-btn">🖨️ Print Recipe</button>
       ${recipe.source ? `<a href="${recipe.source}" target="_blank" class="btn btn-secondary">View Original →</a>` : ''}
       <button onclick="deleteRecipe('${slug}')" class="btn btn-danger">Delete Recipe</button>
+    </div>
+  `;
+  
+  // Load nutrition data in background
+  loadNutritionData(slug);
+  
+  // Load cost estimate in background
+  loadCostEstimate(slug);
+}
+
+// =====================
+// Nutrition Panel Functions
+// =====================
+
+let nutritionDataCache = {};
+
+function toggleNutritionPanel(btn) {
+  const content = document.getElementById('nutrition-content');
+  const chevron = btn.querySelector('.chevron');
+  
+  content.classList.toggle('hidden');
+  chevron.classList.toggle('expanded');
+}
+
+async function loadNutritionData(slug) {
+  if (nutritionDataCache[slug]) {
+    renderNutritionPanel(nutritionDataCache[slug]);
+    return;
+  }
+  
+  try {
+    const result = await api(`/recipes/${slug}/nutrition`);
+    if (result.success && result.data.success) {
+      nutritionDataCache[slug] = result.data;
+      renderNutritionPanel(result.data);
+    } else {
+      renderNutritionError(result.error || 'Could not calculate nutrition');
+    }
+  } catch (err) {
+    console.error('Error loading nutrition:', err);
+    renderNutritionError('Failed to load nutrition data');
+  }
+}
+
+function renderNutritionPanel(data) {
+  const container = document.getElementById('nutrition-content');
+  if (!container) return;
+  
+  const { total, perServing, servings, coverage, isPartial } = data;
+  
+  const displayData = perServing || total;
+  const label = perServing ? 'Per Serving' : 'Total Recipe';
+  
+  container.innerHTML = `
+    <div class="nutrition-header">
+      <span class="nutrition-label">${label}${servings ? ` (${servings} servings)` : ''}</span>
+      ${isPartial ? `<span class="nutrition-partial" title="Not all ingredients have nutrition data">⚠️ ${coverage}% data coverage</span>` : ''}
+    </div>
+    <div class="nutrition-grid">
+      <div class="nutrition-item">
+        <span class="nutrition-value">${displayData.calories}</span>
+        <span class="nutrition-name">Calories</span>
+      </div>
+      <div class="nutrition-item">
+        <span class="nutrition-value">${displayData.protein}g</span>
+        <span class="nutrition-name">Protein</span>
+      </div>
+      <div class="nutrition-item">
+        <span class="nutrition-value">${displayData.carbs}g</span>
+        <span class="nutrition-name">Carbs</span>
+      </div>
+      <div class="nutrition-item">
+        <span class="nutrition-value">${displayData.fat}g</span>
+        <span class="nutrition-name">Fat</span>
+      </div>
+      <div class="nutrition-item">
+        <span class="nutrition-value">${displayData.fiber}g</span>
+        <span class="nutrition-name">Fiber</span>
+      </div>
+      <div class="nutrition-item">
+        <span class="nutrition-value">${displayData.sodium}mg</span>
+        <span class="nutrition-name">Sodium</span>
+      </div>
+    </div>
+    ${perServing ? `
+      <button class="nutrition-toggle-total" onclick="toggleNutritionView(this, ${JSON.stringify(total).replace(/"/g, '&quot;')}, ${JSON.stringify(perServing).replace(/"/g, '&quot;')}, ${servings})">
+        Show Total Recipe
+      </button>
+    ` : ''}
+  `;
+}
+
+function toggleNutritionView(btn, total, perServing, servings) {
+  const grid = btn.parentElement.querySelector('.nutrition-grid');
+  const label = btn.parentElement.querySelector('.nutrition-label');
+  const isShowingPerServing = btn.textContent.includes('Total');
+  
+  const displayData = isShowingPerServing ? total : perServing;
+  const newLabel = isShowingPerServing ? 'Total Recipe' : `Per Serving (${servings} servings)`;
+  btn.textContent = isShowingPerServing ? 'Show Per Serving' : 'Show Total Recipe';
+  label.textContent = newLabel;
+  
+  grid.innerHTML = `
+    <div class="nutrition-item">
+      <span class="nutrition-value">${displayData.calories}</span>
+      <span class="nutrition-name">Calories</span>
+    </div>
+    <div class="nutrition-item">
+      <span class="nutrition-value">${displayData.protein}g</span>
+      <span class="nutrition-name">Protein</span>
+    </div>
+    <div class="nutrition-item">
+      <span class="nutrition-value">${displayData.carbs}g</span>
+      <span class="nutrition-name">Carbs</span>
+    </div>
+    <div class="nutrition-item">
+      <span class="nutrition-value">${displayData.fat}g</span>
+      <span class="nutrition-name">Fat</span>
+    </div>
+    <div class="nutrition-item">
+      <span class="nutrition-value">${displayData.fiber}g</span>
+      <span class="nutrition-name">Fiber</span>
+    </div>
+    <div class="nutrition-item">
+      <span class="nutrition-value">${displayData.sodium}mg</span>
+      <span class="nutrition-name">Sodium</span>
+    </div>
+  `;
+}
+
+function renderNutritionError(message) {
+  const container = document.getElementById('nutrition-content');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="nutrition-error">
+      <span>📊</span>
+      <p>${message}</p>
+    </div>
+  `;
+}
+
+// =====================
+// Cost Estimate Panel Functions
+// =====================
+
+let costDataCache = {};
+
+function toggleCostPanel(btn) {
+  const content = document.getElementById('cost-content');
+  const chevron = btn.querySelector('.chevron');
+  
+  content.classList.toggle('hidden');
+  chevron.classList.toggle('expanded');
+}
+
+async function loadCostEstimate(slug) {
+  if (costDataCache[slug]) {
+    renderCostPanel(costDataCache[slug]);
+    return;
+  }
+  
+  try {
+    const result = await api(`/recipes/${slug}/cost`);
+    if (result.success) {
+      costDataCache[slug] = result.data;
+      renderCostPanel(result.data);
+    } else {
+      renderCostError(result.error || 'Could not estimate cost');
+    }
+  } catch (err) {
+    console.error('Error loading cost estimate:', err);
+    renderCostError('Failed to load cost estimate');
+  }
+}
+
+function renderCostPanel(data) {
+  const container = document.getElementById('cost-content');
+  if (!container) return;
+  
+  const { total, breakdown, itemsWithPrices, itemsWithoutPrices } = data;
+  
+  if (total === null || itemsWithPrices === 0) {
+    container.innerHTML = `
+      <div class="nutrition-error">
+        <span>💰</span>
+        <p>No price data available yet. Add prices when you buy ingredients in the <a href="/pantry.html">Pantry</a> to see cost estimates.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  const coverage = Math.round((itemsWithPrices / (itemsWithPrices + itemsWithoutPrices)) * 100);
+  
+  container.innerHTML = `
+    <div class="nutrition-header">
+      <span class="nutrition-label">Estimated Recipe Cost</span>
+      ${itemsWithoutPrices > 0 ? `<span class="nutrition-partial" title="${itemsWithoutPrices} ingredients without price data">⚠️ ${coverage}% data</span>` : ''}
+    </div>
+    <div class="cost-total">
+      <span class="cost-value">$${total.toFixed(2)}</span>
+      <span class="cost-label">total estimated cost</span>
+    </div>
+    <div class="cost-breakdown">
+      <h4 style="margin: 0.5rem 0; font-size: 0.9rem; color: var(--text-muted);">Ingredient Breakdown</h4>
+      <ul class="cost-list">
+        ${breakdown.map(item => `
+          <li class="cost-item ${item.cost === null ? 'unknown' : ''}">
+            <span class="cost-ingredient">${escapeHtml(item.ingredient)}</span>
+            <span class="cost-amount">
+              ${item.cost !== null 
+                ? `$${item.cost.toFixed(2)}` 
+                : '<span style="color: var(--text-muted);">unknown</span>'}
+            </span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+    ${itemsWithoutPrices > 0 ? `
+      <div class="cost-note">
+        <small>💡 Track prices in the <a href="/pantry.html">Pantry</a> to improve estimates</small>
+      </div>
+    ` : ''}
+  `;
+}
+
+function renderCostError(message) {
+  const container = document.getElementById('cost-content');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="nutrition-error">
+      <span>💰</span>
+      <p>${message}</p>
     </div>
   `;
 }

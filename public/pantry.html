@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pantry - Recipe Keeper</title>
   <link rel="stylesheet" href="/css/style.css">
+  <!-- HTML5 QRCode Library for Barcode Scanning -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <script>
     // Apply dark mode immediately to prevent flash
     if (localStorage.getItem('darkMode') === 'true' || 
@@ -469,6 +471,747 @@
     .page-header h1 {
       margin: 0;
     }
+    
+    /* Barcode Scanner Styles */
+    .scan-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+    }
+    
+    .scan-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .scan-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .form-header h2 {
+      margin: 0;
+    }
+    
+    #barcode-scanner-modal .modal-content {
+      max-width: 600px;
+    }
+    
+    #barcode-reader {
+      width: 100%;
+      min-height: 300px;
+    }
+    
+    #barcode-reader video {
+      border-radius: 8px;
+    }
+    
+    .barcode-manual-entry {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-light);
+    }
+    
+    .barcode-manual-entry .form-row-inline {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .barcode-manual-entry input {
+      flex: 1;
+    }
+    
+    .scanner-status {
+      text-align: center;
+      padding: 1rem;
+      color: var(--text-muted);
+    }
+    
+    .scanner-status.error {
+      color: var(--error-text);
+      background: var(--error-bg);
+      border-radius: 8px;
+    }
+    
+    .scanner-status.success {
+      color: var(--success-text);
+      background: var(--success-bg);
+      border-radius: 8px;
+    }
+    
+    .product-preview {
+      background: var(--bg-hover);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .product-preview .product-header {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    
+    .product-preview .product-image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: var(--bg-secondary);
+    }
+    
+    .product-preview .product-info {
+      flex: 1;
+    }
+    
+    .product-preview .product-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .product-preview .product-brand {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    
+    .product-preview .product-category {
+      display: inline-block;
+      background: var(--accent-primary);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    
+    .product-preview .allergen-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-top: 0.5rem;
+    }
+    
+    .product-preview .allergen-badge {
+      background: var(--error-bg);
+      color: var(--error-text);
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    
+    .camera-select-wrapper {
+      margin-bottom: 1rem;
+    }
+    
+    .camera-select-wrapper label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    
+    /* Quick-Add Section Styles */
+    .quick-add-section {
+      background: var(--bg-card);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+    
+    .quick-add-header {
+      background: var(--bg-hover);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .quick-add-header:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .quick-add-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .quick-add-header .toggle-icon {
+      transition: transform 0.2s;
+    }
+    
+    .quick-add-header.collapsed .toggle-icon {
+      transform: rotate(-90deg);
+    }
+    
+    .quick-add-content {
+      padding: 1rem 1.5rem;
+    }
+    
+    .quick-add-content.collapsed {
+      display: none;
+    }
+    
+    .quick-add-category {
+      margin-bottom: 1.5rem;
+    }
+    
+    .quick-add-category:last-child {
+      margin-bottom: 0;
+    }
+    
+    .quick-add-category h3 {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin: 0 0 0.75rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .quick-add-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .quick-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .quick-add-btn:hover {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+    
+    .quick-add-btn:active {
+      transform: translateY(0);
+    }
+    
+    .quick-add-btn .item-count {
+      font-size: 0.75rem;
+      background: var(--bg-hover);
+      padding: 0.125rem 0.375rem;
+      border-radius: 10px;
+      color: var(--text-muted);
+    }
+    
+    .quick-add-btn:hover .item-count {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+    
+    .quick-add-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 0.9rem;
+    }
+    
+    /* Bulk Import Button */
+    .bulk-import-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+    
+    .bulk-import-btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-primary);
+    }
+    
+    /* Bulk Import Modal */
+    #bulk-import-modal .modal-content {
+      max-width: 700px;
+    }
+    
+    .import-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid var(--border-light);
+    }
+    
+    .import-tab {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      position: relative;
+      transition: color 0.2s;
+    }
+    
+    .import-tab:hover {
+      color: var(--text-primary);
+    }
+    
+    .import-tab.active {
+      color: var(--accent-primary);
+    }
+    
+    .import-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent-primary);
+    }
+    
+    .import-panel {
+      display: none;
+    }
+    
+    .import-panel.active {
+      display: block;
+    }
+    
+    .import-textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      resize: vertical;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+    
+    .import-textarea::placeholder {
+      color: var(--text-muted);
+    }
+    
+    .import-help {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    
+    .csv-upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .csv-upload-area:hover {
+      border-color: var(--accent-primary);
+      background: var(--bg-hover);
+    }
+    
+    .csv-upload-area.drag-over {
+      border-color: var(--accent-primary);
+      background: var(--accent-bg);
+    }
+    
+    .csv-upload-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .csv-upload-text {
+      color: var(--text-muted);
+    }
+    
+    .csv-file-input {
+      display: none;
+    }
+    
+    .preview-section {
+      margin-top: 1rem;
+      border-top: 1px solid var(--border-light);
+      padding-top: 1rem;
+    }
+    
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    
+    .preview-header h4 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    
+    .preview-count {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    
+    .preview-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+    }
+    
+    .preview-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.9rem;
+    }
+    
+    .preview-item:last-child {
+      border-bottom: none;
+    }
+    
+    .preview-item.error {
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+    
+    .preview-item .remove-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0.25rem;
+      font-size: 1rem;
+    }
+    
+    .preview-item .remove-btn:hover {
+      color: var(--danger-text);
+    }
+    
+    .import-result {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+    
+    .import-result.success {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--success-border);
+    }
+    
+    .import-result.partial {
+      background: #fff8e1;
+      color: #e65100;
+      border: 1px solid #ffe082;
+    }
+    
+    .dark-mode .import-result.partial {
+      background: #3d3014;
+      color: #ffb74d;
+      border-color: #5c4d1f;
+    }
+    
+    .import-result.error {
+      background: var(--error-bg);
+      color: var(--error-text);
+      border: 1px solid var(--error-border);
+    }
+    
+    /* Price Tracking Styles */
+    .price-input-group {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+    
+    .price-input-group .form-group {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .price-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+    
+    .expiration-hint {
+      font-size: 0.75rem;
+      color: var(--accent-primary);
+      margin-top: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .expiration-hint.warning {
+      color: #e65100;
+    }
+    
+    .dark-mode .expiration-hint.warning {
+      color: #ffb74d;
+    }
+    
+    /* Shopping Insights Section */
+    .insights-section {
+      background: var(--bg-card);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+    
+    .insights-header {
+      background: var(--bg-hover);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .insights-header:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .insights-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .insights-content {
+      padding: 1rem 1.5rem;
+    }
+    
+    .insights-content.collapsed {
+      display: none;
+    }
+    
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    
+    .insight-card {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid var(--border-light);
+    }
+    
+    .insight-card h4 {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .insight-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .insight-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .insight-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .insight-list .item-name {
+      font-weight: 500;
+    }
+    
+    .insight-list .item-detail {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    
+    .restock-badge {
+      background: #fff8e1;
+      color: #e65100;
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .dark-mode .restock-badge {
+      background: #3d3014;
+      color: #ffb74d;
+    }
+    
+    .empty-insight {
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 1rem;
+    }
+    
+    /* Price History Modal */
+    #price-history-modal .modal-content {
+      max-width: 600px;
+    }
+    
+    .price-history-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .price-history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .price-history-item:last-child {
+      border-bottom: none;
+    }
+    
+    .price-history-item .price-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .price-history-item .price-value {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+    }
+    
+    .price-history-item .price-detail {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    
+    .price-history-item .price-date {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    
+    .price-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--bg-hover);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    
+    .price-stat {
+      text-align: center;
+    }
+    
+    .price-stat .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+    }
+    
+    .price-stat .stat-value {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .price-trend {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    
+    .price-trend.increasing {
+      color: #d32f2f;
+      background: #ffebee;
+    }
+    
+    .price-trend.decreasing {
+      color: #388e3c;
+      background: #e8f5e9;
+    }
+    
+    .dark-mode .price-trend.increasing {
+      background: #3d1f1f;
+      color: #ef5350;
+    }
+    
+    .dark-mode .price-trend.decreasing {
+      background: #1f3d1f;
+      color: #66bb6a;
+    }
+    
+    .pantry-item .item-price {
+      font-size: 0.85rem;
+      color: var(--accent-primary);
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
@@ -533,9 +1276,52 @@
       <ul id="expired-list"></ul>
     </div>
 
+    <!-- Quick-Add Section -->
+    <div class="quick-add-section">
+      <div class="quick-add-header" onclick="toggleQuickAdd()">
+        <h2>⚡ Quick Add</h2>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="quick-add-content" id="quick-add-content">
+        <!-- Frequently Bought -->
+        <div class="quick-add-category" id="frequent-items-section">
+          <h3>🔄 Frequently Bought</h3>
+          <div class="quick-add-items" id="frequent-items">
+            <span class="quick-add-empty">Loading...</span>
+          </div>
+        </div>
+        
+        <!-- Recent Items -->
+        <div class="quick-add-category" id="recent-items-section">
+          <h3>🕐 Recently Added</h3>
+          <div class="quick-add-items" id="recent-items">
+            <span class="quick-add-empty">Loading...</span>
+          </div>
+        </div>
+        
+        <!-- Common Staples -->
+        <div class="quick-add-category">
+          <h3>🛒 Common Staples</h3>
+          <div class="quick-add-items" id="staple-items">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Add Pantry Item Form -->
     <div class="add-pantry-form">
-      <h2>➕ Add to Pantry</h2>
+      <div class="form-header">
+        <h2>➕ Add to Pantry</h2>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="bulk-import-btn" onclick="openBulkImportModal()">
+            📋 Bulk Import
+          </button>
+          <button type="button" class="scan-btn" onclick="openBarcodeScanner()">
+            📷 Scan Barcode
+          </button>
+        </div>
+      </div>
       <form id="add-pantry-form">
         <div class="form-row">
           <div class="form-group autocomplete-wrapper">
@@ -570,7 +1356,7 @@
           </div>
           <div class="form-group">
             <label class="form-label" for="location">Location *</label>
-            <select class="form-input" id="location" required>
+            <select class="form-input" id="location" required onchange="onLocationChange()">
               <option value="pantry">🧊 Pantry</option>
               <option value="refrigerator">❄️ Refrigerator</option>
               <option value="freezer">🥶 Freezer</option>
@@ -585,6 +1371,7 @@
           <div class="form-group">
             <label class="form-label" for="expiration-date">Expiration Date</label>
             <input type="date" class="form-input" id="expiration-date">
+            <div id="expiration-hint" class="expiration-hint" style="display: none;"></div>
           </div>
           <div class="form-group">
             <label class="form-label" for="notes">Notes</label>
@@ -592,7 +1379,69 @@
           </div>
           <button type="submit" class="btn btn-primary">Add Item</button>
         </div>
+        <!-- Price Tracking Row (Optional) -->
+        <details class="price-tracking-details" style="margin-top: 1rem;">
+          <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.9rem;">💰 Track Price (optional)</summary>
+          <div class="price-input-group" style="margin-top: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label" for="price-paid">Price Paid ($)</label>
+              <input type="number" class="form-input" id="price-paid" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="store">Store</label>
+              <input type="text" class="form-input" id="store" list="store-list" placeholder="Where you bought it">
+              <datalist id="store-list">
+                <option value="Walmart">
+                <option value="Target">
+                <option value="Costco">
+                <option value="Kroger">
+                <option value="Safeway">
+                <option value="Whole Foods">
+                <option value="Trader Joe's">
+                <option value="Aldi">
+                <option value="Amazon">
+                <option value="Local Store">
+              </datalist>
+            </div>
+          </div>
+          <div class="price-hint">Price tracking helps estimate recipe costs</div>
+        </details>
       </form>
+    </div>
+
+    <!-- Shopping Insights Section -->
+    <div class="insights-section" id="insights-section" style="display: none;">
+      <div class="insights-header" onclick="toggleInsights()">
+        <h2>📊 Shopping Insights</h2>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="insights-content" id="insights-content">
+        <div class="insights-grid">
+          <!-- Restock Suggestions -->
+          <div class="insight-card">
+            <h4>🔔 Time to Restock</h4>
+            <ul class="insight-list" id="restock-suggestions">
+              <li class="empty-insight">Loading...</li>
+            </ul>
+          </div>
+          
+          <!-- Shopping Patterns -->
+          <div class="insight-card">
+            <h4>📈 Shopping Patterns</h4>
+            <ul class="insight-list" id="shopping-patterns">
+              <li class="empty-insight">Loading...</li>
+            </ul>
+          </div>
+          
+          <!-- Running Low -->
+          <div class="insight-card">
+            <h4>⚠️ Running Low</h4>
+            <ul class="insight-list" id="running-low">
+              <li class="empty-insight">Loading...</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Search & Filter -->
@@ -677,19 +1526,185 @@
     </div>
   </div>
 
+  <!-- Bulk Import Modal -->
+  <div id="bulk-import-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeBulkImportModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📋 Bulk Import</h2>
+        <button class="modal-close" onclick="closeBulkImportModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="import-tabs">
+          <button class="import-tab active" data-panel="text-import" onclick="switchImportTab('text-import')">
+            📝 Paste List
+          </button>
+          <button class="import-tab" data-panel="csv-import" onclick="switchImportTab('csv-import')">
+            📄 Upload CSV
+          </button>
+        </div>
+        
+        <!-- Text Import Panel -->
+        <div class="import-panel active" id="text-import-panel">
+          <textarea class="import-textarea" id="import-text" 
+            placeholder="Paste your items here, one per line. Examples:
+2 lb chicken breast
+1 gallon milk
+eggs
+3 onions
+1/2 lb ground beef
+olive oil"></textarea>
+          <div class="import-help">
+            Format: "quantity unit item" or just "item name"<br>
+            Supported units: lb, oz, kg, g, cup, tbsp, tsp, gallon, ml, L, piece, can, bottle, bag, box, jar
+          </div>
+        </div>
+        
+        <!-- CSV Import Panel -->
+        <div class="import-panel" id="csv-import-panel">
+          <div class="csv-upload-area" id="csv-upload-area" onclick="document.getElementById('csv-file-input').click()">
+            <div class="csv-upload-icon">📁</div>
+            <div class="csv-upload-text">
+              Click to upload or drag & drop a CSV file<br>
+              <small>Columns: name, quantity (optional), unit (optional), location (optional), expiration (optional)</small>
+            </div>
+          </div>
+          <input type="file" id="csv-file-input" class="csv-file-input" accept=".csv" onchange="handleCSVUpload(event)">
+        </div>
+        
+        <!-- Preview Section -->
+        <div class="preview-section" id="import-preview-section" style="display:none;">
+          <div class="preview-header">
+            <h4>Preview Items</h4>
+            <span class="preview-count" id="preview-count">0 items</span>
+          </div>
+          <div class="preview-list" id="import-preview-list">
+            <!-- Filled dynamically -->
+          </div>
+        </div>
+        
+        <!-- Import Result -->
+        <div id="import-result" class="import-result" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeBulkImportModal()">Cancel</button>
+        <button type="button" class="btn btn-secondary" id="parse-import-btn" onclick="parseImportItems()">
+          👁️ Preview
+        </button>
+        <button type="button" class="btn btn-primary" id="confirm-import-btn" onclick="confirmBulkImport()" disabled>
+          ✅ Add All Items
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barcode Scanner Modal -->
+  <div id="barcode-scanner-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeBarcodeScanner()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📷 Scan Barcode</h2>
+        <button class="modal-close" onclick="closeBarcodeScanner()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="scanner-status" class="scanner-status">
+          Initializing camera...
+        </div>
+        
+        <div class="camera-select-wrapper hidden" id="camera-select-wrapper">
+          <label for="camera-select">Select Camera:</label>
+          <select class="form-input" id="camera-select" onchange="switchCamera()"></select>
+        </div>
+        
+        <div id="barcode-reader"></div>
+        
+        <div id="product-preview" class="product-preview hidden">
+          <!-- Filled dynamically when product is found -->
+        </div>
+        
+        <div class="barcode-manual-entry">
+          <label class="form-label">Or enter barcode manually:</label>
+          <div class="form-row-inline">
+            <input type="text" class="form-input" id="manual-barcode" placeholder="Enter barcode (8-14 digits)" 
+                   pattern="[0-9]{8,14}" maxlength="14">
+            <button type="button" class="btn btn-secondary" onclick="lookupManualBarcode()">Look Up</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeBarcodeScanner()">Cancel</button>
+        <button type="button" class="btn btn-primary hidden" id="add-scanned-item-btn" onclick="addScannedItemToForm()">
+          Add to Form
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Price History Modal -->
+  <div id="price-history-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closePriceHistoryModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>💰 Price History</h2>
+        <button class="modal-close" onclick="closePriceHistoryModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h3 id="price-history-ingredient">Loading...</h3>
+        
+        <div id="price-history-content">
+          <div class="loading"><span class="spinner"></span> Loading price history...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closePriceHistoryModal()">Close</button>
+        <button type="button" class="btn btn-primary" onclick="exportPriceHistory()">📥 Export CSV</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/app.js"></script>
   <script>
     // Pantry state
     let pantryItems = [];
-    let currentFilter = 'all';
-    let searchQuery = '';
+    let pantryLocationFilter = 'all';
+    let pantrySearchQuery = '';
     let autocompleteTimeout = null;
+    
+    // Quick-add and bulk import state
+    let parsedImportItems = [];
+    let quickAddCollapsed = false;
+    let insightsCollapsed = false;
+    
+    // Price history state
+    let currentPriceHistoryData = null;
+
+    // Common staples with sensible defaults
+    const COMMON_STAPLES = [
+      { name: 'Milk', unit: 'gallon', location: 'refrigerator' },
+      { name: 'Eggs', unit: 'piece', location: 'refrigerator', quantity: 12 },
+      { name: 'Bread', unit: 'piece', location: 'pantry' },
+      { name: 'Butter', unit: 'lb', location: 'refrigerator' },
+      { name: 'Cheese', unit: 'lb', location: 'refrigerator' },
+      { name: 'Chicken Breast', unit: 'lb', location: 'refrigerator' },
+      { name: 'Ground Beef', unit: 'lb', location: 'refrigerator' },
+      { name: 'Rice', unit: 'lb', location: 'pantry' },
+      { name: 'Pasta', unit: 'lb', location: 'pantry' },
+      { name: 'Olive Oil', unit: 'bottle', location: 'pantry' },
+      { name: 'Salt', unit: 'piece', location: 'pantry' },
+      { name: 'Pepper', unit: 'piece', location: 'pantry' },
+      { name: 'Onions', unit: 'piece', location: 'pantry', quantity: 3 },
+      { name: 'Garlic', unit: 'piece', location: 'pantry' },
+      { name: 'Tomatoes', unit: 'piece', location: 'refrigerator', quantity: 4 }
+    ];
 
     // Initialize page
     document.addEventListener('DOMContentLoaded', () => {
       loadPantryItems();
       loadExpiringItems();
+      loadQuickAddItems();
+      loadShoppingInsights();
       setupEventListeners();
+      setupBulkImportDragDrop();
       setDefaultDates();
     });
 
@@ -707,7 +1722,7 @@
       
       // Search
       document.getElementById('pantry-search').addEventListener('input', (e) => {
-        searchQuery = e.target.value.toLowerCase();
+        pantrySearchQuery = e.target.value.toLowerCase();
         renderPantryItems();
       });
       
@@ -716,12 +1731,12 @@
         btn.addEventListener('click', () => {
           document.querySelectorAll('.location-filter .filter-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          currentFilter = btn.dataset.location;
+          pantryLocationFilter = btn.dataset.location;
           renderPantryItems();
         });
       });
       
-      // Autocomplete
+      // Autocomplete with smart expiration
       const ingredientInput = document.getElementById('ingredient-name');
       ingredientInput.addEventListener('input', handleAutocomplete);
       ingredientInput.addEventListener('blur', () => {
@@ -729,6 +1744,277 @@
           document.getElementById('autocomplete-list').classList.add('hidden');
         }, 200);
       });
+      ingredientInput.addEventListener('change', () => {
+        // Suggest expiration date when ingredient name changes
+        suggestExpirationDate();
+      });
+    }
+    
+    // =====================
+    // Smart Expiration Date Functions
+    // =====================
+    
+    async function suggestExpirationDate() {
+      const name = document.getElementById('ingredient-name').value.trim();
+      const location = document.getElementById('location').value;
+      const expirationInput = document.getElementById('expiration-date');
+      const hintEl = document.getElementById('expiration-hint');
+      
+      if (!name) {
+        hintEl.style.display = 'none';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/ingredients/shelf-life/suggest?name=${encodeURIComponent(name)}&location=${encodeURIComponent(location)}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Only auto-fill if expiration is empty
+          if (!expirationInput.value) {
+            expirationInput.value = result.data.date;
+          }
+          
+          // Show hint
+          hintEl.innerHTML = `💡 ${result.data.hint}`;
+          hintEl.style.display = 'flex';
+          
+          // Add warning class for short shelf life items
+          if (result.data.days <= 3) {
+            hintEl.classList.add('warning');
+          } else {
+            hintEl.classList.remove('warning');
+          }
+        }
+      } catch (err) {
+        console.error('Error getting shelf life suggestion:', err);
+        hintEl.style.display = 'none';
+      }
+    }
+    
+    function onLocationChange() {
+      // Re-suggest expiration date when location changes
+      suggestExpirationDate();
+    }
+    
+    // =====================
+    // Shopping Insights Functions
+    // =====================
+    
+    async function loadShoppingInsights() {
+      const section = document.getElementById('insights-section');
+      
+      try {
+        const response = await fetch('/api/ingredients/pantry/insights');
+        const result = await response.json();
+        
+        if (!result.success) {
+          section.style.display = 'none';
+          return;
+        }
+        
+        const data = result.data;
+        
+        // Check if we have enough data to show insights
+        if (data.totalPurchases < 5) {
+          section.style.display = 'none';
+          return;
+        }
+        
+        section.style.display = 'block';
+        
+        // Render restock suggestions
+        const restockEl = document.getElementById('restock-suggestions');
+        if (data.restockSuggestions && data.restockSuggestions.length > 0) {
+          restockEl.innerHTML = data.restockSuggestions.slice(0, 5).map(item => `
+            <li>
+              <span class="item-name">${escapeHtml(item.ingredientName)}</span>
+              <span class="restock-badge">${item.daysSinceLast}d ago</span>
+            </li>
+          `).join('');
+        } else {
+          restockEl.innerHTML = '<li class="empty-insight">You\'re well stocked! 🎉</li>';
+        }
+        
+        // Render shopping patterns
+        const patternsEl = document.getElementById('shopping-patterns');
+        if (data.topBuyers && data.topBuyers.length > 0) {
+          patternsEl.innerHTML = data.topBuyers.slice(0, 5).map(item => `
+            <li>
+              <span class="item-name">${escapeHtml(item.ingredientName)}</span>
+              <span class="item-detail">${item.frequency}</span>
+            </li>
+          `).join('');
+        } else {
+          patternsEl.innerHTML = '<li class="empty-insight">Add more items to see patterns</li>';
+        }
+        
+        // Render running low
+        const runningLowEl = document.getElementById('running-low');
+        if (data.runningLow && data.runningLow.length > 0) {
+          runningLowEl.innerHTML = data.runningLow.slice(0, 5).map(item => `
+            <li>
+              <span class="item-name">${escapeHtml(item.ingredientName)}</span>
+              <span class="item-detail">${item.quantity} ${item.unit || 'left'}</span>
+            </li>
+          `).join('');
+        } else {
+          runningLowEl.innerHTML = '<li class="empty-insight">Nothing running low</li>';
+        }
+        
+      } catch (err) {
+        console.error('Error loading shopping insights:', err);
+        section.style.display = 'none';
+      }
+    }
+    
+    function toggleInsights() {
+      const content = document.getElementById('insights-content');
+      const header = document.querySelector('.insights-header');
+      insightsCollapsed = !insightsCollapsed;
+      
+      content.classList.toggle('collapsed', insightsCollapsed);
+      header.querySelector('.toggle-icon').textContent = insightsCollapsed ? '▶' : '▼';
+    }
+    
+    // =====================
+    // Price History Functions
+    // =====================
+    
+    async function openPriceHistoryModal(ingredientId, ingredientName) {
+      const modal = document.getElementById('price-history-modal');
+      const titleEl = document.getElementById('price-history-ingredient');
+      const contentEl = document.getElementById('price-history-content');
+      
+      modal.classList.remove('hidden');
+      titleEl.textContent = ingredientName || 'Loading...';
+      contentEl.innerHTML = '<div class="loading"><span class="spinner"></span> Loading price history...</div>';
+      
+      try {
+        const response = await fetch(`/api/ingredients/${ingredientId}/price-history`);
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to load price history');
+        }
+        
+        currentPriceHistoryData = result.data;
+        titleEl.textContent = result.data.ingredient;
+        
+        if (!result.data.stats || result.data.history.length === 0) {
+          contentEl.innerHTML = `
+            <div class="empty-insight" style="padding: 2rem; text-align: center;">
+              <p>📊 No price data yet</p>
+              <p style="font-size: 0.9rem; color: var(--text-muted);">
+                Add prices when you buy this item to track costs over time.
+              </p>
+            </div>
+          `;
+          return;
+        }
+        
+        const data = result.data;
+        
+        contentEl.innerHTML = `
+          <div class="price-trend ${data.trend}">
+            ${data.trendIcon} Price trend: <strong>${data.trend}</strong>
+          </div>
+          
+          <div class="price-stats">
+            <div class="price-stat">
+              <span class="stat-label">Average</span>
+              <span class="stat-value">$${data.stats.avgPrice.toFixed(2)}</span>
+            </div>
+            <div class="price-stat">
+              <span class="stat-label">Lowest</span>
+              <span class="stat-value">$${data.stats.minPrice.toFixed(2)}</span>
+            </div>
+            <div class="price-stat">
+              <span class="stat-label">Highest</span>
+              <span class="stat-value">$${data.stats.maxPrice.toFixed(2)}</span>
+            </div>
+          </div>
+          
+          ${data.byStore && data.byStore.length > 0 ? `
+            <div style="margin-bottom: 1rem;">
+              <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: var(--text-muted);">Best Prices by Store</h4>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                ${data.byStore.slice(0, 5).map((s, i) => `
+                  <span style="padding: 0.25rem 0.75rem; background: ${i === 0 ? 'var(--success-bg)' : 'var(--bg-secondary)'}; 
+                        border-radius: 4px; font-size: 0.85rem; 
+                        color: ${i === 0 ? 'var(--success-text)' : 'var(--text-primary)'};">
+                    ${escapeHtml(s.store)}: $${s.avgPrice.toFixed(2)}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          
+          <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: var(--text-muted);">
+            Purchase History (${data.stats.count} records)
+          </h4>
+          <div class="price-history-list">
+            ${data.history.map(p => `
+              <div class="price-history-item">
+                <div class="price-info">
+                  <span class="price-value">$${p.price.toFixed(2)}</span>
+                  <span class="price-detail">
+                    ${p.quantity || 1} ${p.unit || 'unit'}${(p.quantity || 1) !== 1 ? 's' : ''}
+                    ${p.pricePerUnit ? `• $${p.pricePerUnit.toFixed(2)}/unit` : ''}
+                    ${p.store ? `• ${escapeHtml(p.store)}` : ''}
+                  </span>
+                </div>
+                <span class="price-date">${new Date(p.date).toLocaleDateString()}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        
+      } catch (err) {
+        console.error('Error loading price history:', err);
+        contentEl.innerHTML = `
+          <div class="message message-error">
+            Failed to load price history: ${err.message}
+          </div>
+        `;
+      }
+    }
+    
+    function closePriceHistoryModal() {
+      document.getElementById('price-history-modal').classList.add('hidden');
+      currentPriceHistoryData = null;
+    }
+    
+    function exportPriceHistory() {
+      if (!currentPriceHistoryData || !currentPriceHistoryData.history) {
+        pantryShowToast('No data to export', 'error');
+        return;
+      }
+      
+      const data = currentPriceHistoryData;
+      const rows = [
+        ['Date', 'Price', 'Quantity', 'Unit', 'Price/Unit', 'Store'],
+        ...data.history.map(p => [
+          new Date(p.date).toLocaleDateString(),
+          p.price.toFixed(2),
+          p.quantity || 1,
+          p.unit || '',
+          p.pricePerUnit ? p.pricePerUnit.toFixed(2) : '',
+          p.store || ''
+        ])
+      ];
+      
+      const csv = rows.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `price-history-${data.ingredient.replace(/\s+/g, '-').toLowerCase()}.csv`;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+      pantryShowToast('Price history exported!', 'success');
     }
 
     async function handleAutocomplete(e) {
@@ -850,10 +2136,10 @@
       
       // Filter items
       let filtered = pantryItems.filter(item => {
-        const matchesFilter = currentFilter === 'all' || 
-          (item.location || 'pantry').toLowerCase() === currentFilter;
-        const matchesSearch = !searchQuery || 
-          (item.ingredientName || item.name || '').toLowerCase().includes(searchQuery);
+        const matchesFilter = pantryLocationFilter === 'all' || 
+          (item.location || 'pantry').toLowerCase() === pantryLocationFilter;
+        const matchesSearch = !pantrySearchQuery || 
+          (item.ingredientName || item.name || '').toLowerCase().includes(pantrySearchQuery);
         return matchesFilter && matchesSearch;
       });
       
@@ -861,7 +2147,7 @@
         container.innerHTML = `
           <div class="empty-state">
             <div class="empty-icon">📦</div>
-            <p>${searchQuery || currentFilter !== 'all' ? 'No items match your filter' : 'Your pantry is empty. Add some items above!'}</p>
+            <p>${pantrySearchQuery || pantryLocationFilter !== 'all' ? 'No items match your filter' : 'Your pantry is empty. Add some items above!'}</p>
           </div>
         `;
         return;
@@ -927,6 +2213,7 @@
             <button class="qty-btn" onclick="adjustQuantity('${item.id}', 1)">+</button>
           </div>
           <div class="item-actions">
+            <button class="action-btn" onclick="openPriceHistoryModal('${item.ingredientId}', '${escapeHtml(item.ingredientName || item.name)}')" title="Price History">💰</button>
             <button class="action-btn" onclick="openEditModal('${item.id}')" title="Edit">✏️</button>
             <button class="action-btn delete" onclick="deleteItem('${item.id}')" title="Delete">🗑️</button>
           </div>
@@ -978,6 +2265,8 @@
       const purchaseDate = document.getElementById('purchase-date').value;
       const expirationDate = document.getElementById('expiration-date').value;
       const notes = document.getElementById('notes').value.trim();
+      const pricePaid = parseFloat(document.getElementById('price-paid').value);
+      const store = document.getElementById('store').value.trim();
       
       try {
         const response = await fetch('/api/ingredients/pantry', {
@@ -999,18 +2288,42 @@
           throw new Error(error.error || 'Failed to add item');
         }
         
+        const addedItem = await response.json();
+        
+        // If price was entered, add price record
+        if (pricePaid && pricePaid > 0) {
+          try {
+            await fetch(`/api/ingredients/${addedItem.ingredientId}/price`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                price: pricePaid,
+                quantity: quantity,
+                unit: unit,
+                store: store || undefined,
+                date: purchaseDate || new Date().toISOString()
+              })
+            });
+          } catch (priceErr) {
+            console.error('Error adding price record:', priceErr);
+            // Don't fail the whole operation if price tracking fails
+          }
+        }
+        
         // Reset form
         document.getElementById('add-pantry-form').reset();
         setDefaultDates();
+        document.getElementById('expiration-hint').style.display = 'none';
         
         // Reload items
         await loadPantryItems();
         await loadExpiringItems();
+        await loadShoppingInsights();
         
-        showToast('Item added to pantry!', 'success');
+        pantryShowToast('Item added to pantry!', 'success');
       } catch (err) {
         console.error('Error adding item:', err);
-        showToast(err.message, 'error');
+        pantryShowToast(err.message, 'error');
       }
     }
 
@@ -1038,7 +2351,7 @@
         renderPantryItems();
       } catch (err) {
         console.error('Error adjusting quantity:', err);
-        showToast('Failed to update quantity', 'error');
+        pantryShowToast('Failed to update quantity', 'error');
       }
     }
 
@@ -1057,10 +2370,10 @@
         renderPantryItems();
         await loadExpiringItems();
         
-        showToast('Item removed from pantry', 'success');
+        pantryShowToast('Item removed from pantry', 'success');
       } catch (err) {
         console.error('Error deleting item:', err);
-        showToast('Failed to remove item', 'error');
+        pantryShowToast('Failed to remove item', 'error');
       }
     }
 
@@ -1107,10 +2420,10 @@
         await loadPantryItems();
         await loadExpiringItems();
         
-        showToast('Item updated!', 'success');
+        pantryShowToast('Item updated!', 'success');
       } catch (err) {
         console.error('Error updating item:', err);
-        showToast('Failed to update item', 'error');
+        pantryShowToast('Failed to update item', 'error');
       }
     }
 
@@ -1121,8 +2434,8 @@
       return div.innerHTML;
     }
 
-    function showToast(message, type = 'info') {
-      // Check if there's a global showToast function from app.js
+    function pantryShowToast(message, type = 'info') {
+      // Use global showToast from app.js if available
       if (typeof window.showToast === 'function') {
         window.showToast(message, type);
         return;
@@ -1151,6 +2464,897 @@
         toast.style.transition = 'opacity 0.3s';
         setTimeout(() => toast.remove(), 300);
       }, 3000);
+    }
+
+    // =====================
+    // Quick-Add Functionality
+    // =====================
+    
+    function toggleQuickAdd() {
+      const content = document.getElementById('quick-add-content');
+      const header = document.querySelector('.quick-add-header');
+      quickAddCollapsed = !quickAddCollapsed;
+      
+      content.classList.toggle('collapsed', quickAddCollapsed);
+      header.classList.toggle('collapsed', quickAddCollapsed);
+    }
+    
+    async function loadQuickAddItems() {
+      await Promise.all([
+        loadFrequentItems(),
+        loadRecentItems(),
+        loadStapleItems()
+      ]);
+    }
+    
+    async function loadFrequentItems() {
+      const container = document.getElementById('frequent-items');
+      const section = document.getElementById('frequent-items-section');
+      
+      try {
+        const response = await fetch('/api/ingredients/pantry/frequent?minCount=3&limit=15');
+        const items = await response.json();
+        
+        if (items.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
+        
+        section.style.display = 'block';
+        container.innerHTML = items.map(item => `
+          <button class="quick-add-btn" onclick="quickAddItem('${escapeHtml(item.ingredientName)}', '${escapeHtml(item.lastUnit || '')}', '${escapeHtml(item.lastLocation || 'pantry')}')">
+            ${escapeHtml(item.ingredientName)}
+            <span class="item-count">${item.count}×</span>
+          </button>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading frequent items:', err);
+        section.style.display = 'none';
+      }
+    }
+    
+    async function loadRecentItems() {
+      const container = document.getElementById('recent-items');
+      const section = document.getElementById('recent-items-section');
+      
+      try {
+        const response = await fetch('/api/ingredients/pantry/recent?limit=10');
+        const items = await response.json();
+        
+        if (items.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
+        
+        section.style.display = 'block';
+        container.innerHTML = items.map(item => `
+          <button class="quick-add-btn" onclick="quickAddItem('${escapeHtml(item.ingredientName)}', '${escapeHtml(item.unit || '')}', '${escapeHtml(item.location || 'pantry')}')">
+            ${escapeHtml(item.ingredientName)}
+          </button>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading recent items:', err);
+        section.style.display = 'none';
+      }
+    }
+    
+    function loadStapleItems() {
+      const container = document.getElementById('staple-items');
+      container.innerHTML = COMMON_STAPLES.map(item => `
+        <button class="quick-add-btn" onclick="quickAddItem('${escapeHtml(item.name)}', '${item.unit}', '${item.location}', ${item.quantity || 1})">
+          ${escapeHtml(item.name)}
+        </button>
+      `).join('');
+    }
+    
+    async function quickAddItem(name, unit, location, quantity = 1) {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Get suggested expiration date
+        let expirationDate = null;
+        try {
+          const expResponse = await fetch(`/api/ingredients/shelf-life/suggest?name=${encodeURIComponent(name)}&location=${encodeURIComponent(location)}`);
+          const expResult = await expResponse.json();
+          if (expResult.success && expResult.data) {
+            expirationDate = expResult.data.date;
+          }
+        } catch (e) {
+          // Ignore expiration suggestion errors
+        }
+        
+        const response = await fetch('/api/ingredients/pantry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ingredientName: name,
+            quantity: quantity,
+            unit: unit || undefined,
+            location: location || 'pantry',
+            purchaseDate: today,
+            expirationDate: expirationDate || undefined
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to add item');
+        }
+        
+        // Reload everything
+        await loadPantryItems();
+        await loadExpiringItems();
+        await loadQuickAddItems();
+        await loadShoppingInsights();
+        
+        pantryShowToast(`Added ${name} to pantry!`, 'success');
+      } catch (err) {
+        console.error('Error quick adding item:', err);
+        pantryShowToast(err.message, 'error');
+      }
+    }
+
+    // =====================
+    // Bulk Import Functionality
+    // =====================
+    
+    function openBulkImportModal() {
+      const modal = document.getElementById('bulk-import-modal');
+      modal.classList.remove('hidden');
+      
+      // Reset state
+      parsedImportItems = [];
+      document.getElementById('import-text').value = '';
+      document.getElementById('csv-file-input').value = '';
+      document.getElementById('import-preview-section').style.display = 'none';
+      document.getElementById('import-result').style.display = 'none';
+      document.getElementById('confirm-import-btn').disabled = true;
+      
+      // Reset tabs
+      switchImportTab('text-import');
+    }
+    
+    function closeBulkImportModal() {
+      document.getElementById('bulk-import-modal').classList.add('hidden');
+      parsedImportItems = [];
+    }
+    
+    function switchImportTab(panelId) {
+      // Update tab buttons
+      document.querySelectorAll('.import-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.panel === panelId);
+      });
+      
+      // Update panels
+      document.querySelectorAll('.import-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === panelId + '-panel');
+      });
+      
+      // Reset preview when switching tabs
+      parsedImportItems = [];
+      document.getElementById('import-preview-section').style.display = 'none';
+      document.getElementById('import-result').style.display = 'none';
+      document.getElementById('confirm-import-btn').disabled = true;
+    }
+    
+    function setupBulkImportDragDrop() {
+      const uploadArea = document.getElementById('csv-upload-area');
+      if (!uploadArea) return;
+      
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+      });
+      
+      uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('drag-over');
+      });
+      
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].name.endsWith('.csv')) {
+          handleCSVFile(files[0]);
+        } else {
+          pantryShowToast('Please upload a CSV file', 'error');
+        }
+      });
+    }
+    
+    function handleCSVUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        handleCSVFile(file);
+      }
+    }
+    
+    async function handleCSVFile(file) {
+      try {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(line => line.trim());
+        
+        if (lines.length < 2) {
+          pantryShowToast('CSV file must have a header row and at least one data row', 'error');
+          return;
+        }
+        
+        // Parse header
+        const header = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+        const nameIdx = header.findIndex(h => h === 'name' || h === 'ingredient' || h === 'item');
+        const qtyIdx = header.findIndex(h => h === 'quantity' || h === 'qty' || h === 'amount');
+        const unitIdx = header.findIndex(h => h === 'unit');
+        const locIdx = header.findIndex(h => h === 'location' || h === 'loc');
+        const expIdx = header.findIndex(h => h === 'expiration' || h === 'exp' || h === 'expires');
+        
+        if (nameIdx === -1) {
+          pantryShowToast('CSV must have a "name" or "ingredient" column', 'error');
+          return;
+        }
+        
+        // Parse data rows
+        parsedImportItems = [];
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCSVLine(lines[i]);
+          const name = values[nameIdx]?.trim();
+          
+          if (!name) continue;
+          
+          parsedImportItems.push({
+            ingredientName: name,
+            quantity: qtyIdx >= 0 ? parseFloat(values[qtyIdx]) || 1 : 1,
+            unit: unitIdx >= 0 ? values[unitIdx]?.trim() || '' : '',
+            location: locIdx >= 0 ? normalizeLocation(values[locIdx]?.trim()) : 'pantry',
+            expirationDate: expIdx >= 0 ? parseDate(values[expIdx]?.trim()) : undefined
+          });
+        }
+        
+        renderImportPreview();
+        pantryShowToast(`Parsed ${parsedImportItems.length} items from CSV`, 'success');
+        
+      } catch (err) {
+        console.error('Error parsing CSV:', err);
+        pantryShowToast('Error parsing CSV file', 'error');
+      }
+    }
+    
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      
+      return result;
+    }
+    
+    function normalizeLocation(loc) {
+      if (!loc) return 'pantry';
+      const lower = loc.toLowerCase();
+      if (lower.includes('fridge') || lower.includes('refrig')) return 'refrigerator';
+      if (lower.includes('freeze')) return 'freezer';
+      if (lower.includes('pantry')) return 'pantry';
+      return 'pantry';
+    }
+    
+    function parseDate(dateStr) {
+      if (!dateStr) return undefined;
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return undefined;
+      return date.toISOString().split('T')[0];
+    }
+    
+    function parseImportItems() {
+      const activePanel = document.querySelector('.import-panel.active');
+      
+      if (activePanel.id === 'text-import-panel') {
+        parseTextImport();
+      }
+      // CSV is parsed on file upload
+      
+      renderImportPreview();
+    }
+    
+    function parseTextImport() {
+      const text = document.getElementById('import-text').value;
+      const lines = text.split(/\r?\n/).filter(line => line.trim());
+      
+      parsedImportItems = [];
+      
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        
+        const parsed = parseIngredientLine(trimmed);
+        parsedImportItems.push(parsed);
+      }
+    }
+    
+    function parseIngredientLine(line) {
+      // Try to parse "quantity unit name" format
+      // Examples: "2 lb chicken breast", "1 gallon milk", "eggs", "3 onions"
+      
+      let quantity = 1;
+      let unit = '';
+      let name = line;
+      
+      // Pattern for mixed fractions: "1 1/2 lb chicken"
+      const mixedMatch = line.match(/^(\d+)\s+(\d+\/\d+)\s+(\w+)?\s*(.+)?$/i);
+      if (mixedMatch) {
+        const whole = parseInt(mixedMatch[1]);
+        const [num, denom] = mixedMatch[2].split('/').map(Number);
+        quantity = whole + (num / denom);
+        const possibleUnit = mixedMatch[3];
+        if (possibleUnit && isUnit(possibleUnit)) {
+          unit = possibleUnit;
+          name = mixedMatch[4] || '';
+        } else {
+          name = ((possibleUnit || '') + ' ' + (mixedMatch[4] || '')).trim();
+        }
+        return { ingredientName: name.trim(), quantity, unit, location: guessLocation(name) };
+      }
+      
+      // Pattern for fractions: "1/2 cup sugar"
+      const fracMatch = line.match(/^(\d+\/\d+)\s+(\w+)?\s*(.+)?$/i);
+      if (fracMatch) {
+        const [num, denom] = fracMatch[1].split('/').map(Number);
+        quantity = num / denom;
+        const possibleUnit = fracMatch[2];
+        if (possibleUnit && isUnit(possibleUnit)) {
+          unit = possibleUnit;
+          name = fracMatch[3] || '';
+        } else {
+          name = ((possibleUnit || '') + ' ' + (fracMatch[3] || '')).trim();
+        }
+        return { ingredientName: name.trim(), quantity, unit, location: guessLocation(name) };
+      }
+      
+      // Pattern for whole/decimal: "2 lb chicken" or "2.5 oz cheese"
+      const numMatch = line.match(/^(\d+(?:\.\d+)?)\s+(\w+)?\s*(.+)?$/i);
+      if (numMatch) {
+        quantity = parseFloat(numMatch[1]);
+        const possibleUnit = numMatch[2];
+        if (possibleUnit && isUnit(possibleUnit)) {
+          unit = possibleUnit;
+          name = numMatch[3] || '';
+        } else {
+          name = ((possibleUnit || '') + ' ' + (numMatch[3] || '')).trim();
+        }
+        return { ingredientName: name.trim(), quantity, unit, location: guessLocation(name) };
+      }
+      
+      // Just a name
+      return { ingredientName: line.trim(), quantity: 1, unit: '', location: guessLocation(line) };
+    }
+    
+    function isUnit(word) {
+      const units = ['lb', 'lbs', 'pound', 'pounds', 'oz', 'ounce', 'ounces', 
+                     'kg', 'kilogram', 'kilograms', 'g', 'gram', 'grams',
+                     'cup', 'cups', 'tbsp', 'tsp', 'tablespoon', 'teaspoon',
+                     'ml', 'l', 'liter', 'liters', 'gallon', 'gallons', 'gal',
+                     'piece', 'pieces', 'can', 'cans', 'bottle', 'bottles',
+                     'bag', 'bags', 'box', 'boxes', 'jar', 'jars', 'bunch', 'bunches',
+                     'head', 'heads', 'clove', 'cloves', 'slice', 'slices',
+                     'package', 'packages', 'pkg'];
+      return units.includes(word.toLowerCase());
+    }
+    
+    function guessLocation(name) {
+      const lower = name.toLowerCase();
+      
+      // Refrigerator items
+      const fridgeKeywords = ['milk', 'cheese', 'yogurt', 'cream', 'butter', 'egg', 
+                              'chicken', 'beef', 'pork', 'fish', 'salmon', 'shrimp',
+                              'lettuce', 'spinach', 'tomato', 'cucumber', 'celery',
+                              'carrot', 'broccoli', 'juice', 'deli', 'bacon', 'sausage'];
+      if (fridgeKeywords.some(kw => lower.includes(kw))) return 'refrigerator';
+      
+      // Freezer items
+      const freezerKeywords = ['frozen', 'ice cream', 'popsicle'];
+      if (freezerKeywords.some(kw => lower.includes(kw))) return 'freezer';
+      
+      return 'pantry';
+    }
+    
+    function renderImportPreview() {
+      const section = document.getElementById('import-preview-section');
+      const list = document.getElementById('import-preview-list');
+      const count = document.getElementById('preview-count');
+      const confirmBtn = document.getElementById('confirm-import-btn');
+      
+      if (parsedImportItems.length === 0) {
+        section.style.display = 'none';
+        confirmBtn.disabled = true;
+        return;
+      }
+      
+      section.style.display = 'block';
+      count.textContent = `${parsedImportItems.length} item${parsedImportItems.length !== 1 ? 's' : ''}`;
+      confirmBtn.disabled = false;
+      
+      list.innerHTML = parsedImportItems.map((item, index) => {
+        const locationIcon = { pantry: '🧊', refrigerator: '❄️', freezer: '🥶' }[item.location] || '📦';
+        return `
+          <div class="preview-item" data-index="${index}">
+            <span>${locationIcon}</span>
+            <span><strong>${escapeHtml(item.ingredientName)}</strong></span>
+            <span style="color:var(--text-muted)">${item.quantity} ${item.unit || 'pc'}</span>
+            ${item.expirationDate ? `<span style="color:var(--text-muted);font-size:0.8rem">exp: ${item.expirationDate}</span>` : ''}
+            <button class="remove-btn" onclick="removeImportItem(${index})" title="Remove">×</button>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function removeImportItem(index) {
+      parsedImportItems.splice(index, 1);
+      renderImportPreview();
+    }
+    
+    async function confirmBulkImport() {
+      if (parsedImportItems.length === 0) {
+        pantryShowToast('No items to import', 'error');
+        return;
+      }
+      
+      const confirmBtn = document.getElementById('confirm-import-btn');
+      const resultEl = document.getElementById('import-result');
+      
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '⏳ Importing...';
+      
+      try {
+        // Add purchase date to all items
+        const today = new Date().toISOString().split('T')[0];
+        const itemsWithDate = parsedImportItems.map(item => ({
+          ...item,
+          purchaseDate: today
+        }));
+        
+        const response = await fetch('/api/ingredients/pantry/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: itemsWithDate })
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Import failed');
+        }
+        
+        // Show result
+        if (result.failed === 0) {
+          resultEl.className = 'import-result success';
+          resultEl.innerHTML = `✅ Successfully added ${result.added} item${result.added !== 1 ? 's' : ''} to pantry!`;
+        } else if (result.added > 0) {
+          resultEl.className = 'import-result partial';
+          resultEl.innerHTML = `⚠️ Added ${result.added} item${result.added !== 1 ? 's' : ''}, ${result.failed} failed.`;
+        } else {
+          resultEl.className = 'import-result error';
+          resultEl.innerHTML = `❌ All ${result.failed} items failed to import.`;
+        }
+        resultEl.style.display = 'block';
+        
+        // Clear preview
+        parsedImportItems = [];
+        document.getElementById('import-preview-section').style.display = 'none';
+        
+        // Reload pantry if any items were added
+        if (result.added > 0) {
+          await loadPantryItems();
+          await loadExpiringItems();
+          await loadQuickAddItems();
+          
+          // Close modal after short delay
+          setTimeout(() => {
+            closeBulkImportModal();
+          }, 2000);
+        }
+        
+      } catch (err) {
+        console.error('Error bulk importing:', err);
+        resultEl.className = 'import-result error';
+        resultEl.innerHTML = `❌ Error: ${err.message}`;
+        resultEl.style.display = 'block';
+      } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '✅ Add All Items';
+      }
+    }
+
+    // =====================
+    // Barcode Scanner Functionality
+    // =====================
+    
+    let html5QrCode = null;
+    let scannedProductData = null;
+    let availableCameras = [];
+    let currentCameraId = null;
+    
+    async function openBarcodeScanner() {
+      const modal = document.getElementById('barcode-scanner-modal');
+      const statusEl = document.getElementById('scanner-status');
+      const cameraSelectWrapper = document.getElementById('camera-select-wrapper');
+      
+      modal.classList.remove('hidden');
+      statusEl.textContent = 'Initializing camera...';
+      statusEl.className = 'scanner-status';
+      
+      // Reset state
+      scannedProductData = null;
+      document.getElementById('product-preview').classList.add('hidden');
+      document.getElementById('add-scanned-item-btn').classList.add('hidden');
+      document.getElementById('manual-barcode').value = '';
+      
+      try {
+        // Get available cameras
+        availableCameras = await Html5Qrcode.getCameras();
+        
+        if (availableCameras.length === 0) {
+          throw new Error('No cameras found on this device');
+        }
+        
+        // Populate camera select dropdown
+        const cameraSelect = document.getElementById('camera-select');
+        cameraSelect.innerHTML = availableCameras.map((camera, index) => 
+          `<option value="${camera.id}">${camera.label || `Camera ${index + 1}`}</option>`
+        ).join('');
+        
+        // Show camera select if multiple cameras available
+        if (availableCameras.length > 1) {
+          cameraSelectWrapper.classList.remove('hidden');
+        } else {
+          cameraSelectWrapper.classList.add('hidden');
+        }
+        
+        // Prefer back camera on mobile
+        const backCamera = availableCameras.find(cam => 
+          cam.label.toLowerCase().includes('back') || 
+          cam.label.toLowerCase().includes('rear') ||
+          cam.label.toLowerCase().includes('environment')
+        );
+        currentCameraId = backCamera ? backCamera.id : availableCameras[0].id;
+        cameraSelect.value = currentCameraId;
+        
+        await startScanner(currentCameraId);
+        
+      } catch (err) {
+        console.error('Error initializing barcode scanner:', err);
+        handleScannerError(err);
+      }
+    }
+    
+    async function startScanner(cameraId) {
+      const statusEl = document.getElementById('scanner-status');
+      
+      // Stop existing scanner if running
+      if (html5QrCode && html5QrCode.isScanning) {
+        await html5QrCode.stop();
+      }
+      
+      html5QrCode = new Html5Qrcode('barcode-reader');
+      
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 150 },
+        aspectRatio: 1.5,
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+          Html5QrcodeSupportedFormats.ITF
+        ]
+      };
+      
+      await html5QrCode.start(
+        cameraId,
+        config,
+        onBarcodeScanned,
+        (errorMessage) => {
+          // Ignore QR code not found errors (happens continuously)
+        }
+      );
+      
+      statusEl.textContent = 'Point camera at a barcode...';
+      statusEl.className = 'scanner-status';
+    }
+    
+    async function switchCamera() {
+      const cameraSelect = document.getElementById('camera-select');
+      currentCameraId = cameraSelect.value;
+      
+      document.getElementById('scanner-status').textContent = 'Switching camera...';
+      
+      try {
+        await startScanner(currentCameraId);
+      } catch (err) {
+        handleScannerError(err);
+      }
+    }
+    
+    function handleScannerError(err) {
+      const statusEl = document.getElementById('scanner-status');
+      let message = 'Unable to access camera.';
+      
+      if (err.name === 'NotAllowedError' || err.message.includes('Permission')) {
+        message = '📵 Camera access denied. Please allow camera access in your browser settings and try again.';
+      } else if (err.name === 'NotFoundError' || err.message.includes('No cameras')) {
+        message = '📵 No camera found. Please connect a camera or use manual barcode entry below.';
+      } else if (err.name === 'NotReadableError') {
+        message = '📵 Camera is in use by another application. Please close other apps using the camera.';
+      } else {
+        message = `📵 Camera error: ${err.message}. Try manual barcode entry below.`;
+      }
+      
+      statusEl.textContent = message;
+      statusEl.className = 'scanner-status error';
+    }
+    
+    async function onBarcodeScanned(decodedText, decodedResult) {
+      // Stop scanning temporarily
+      if (html5QrCode && html5QrCode.isScanning) {
+        await html5QrCode.pause();
+      }
+      
+      const statusEl = document.getElementById('scanner-status');
+      statusEl.textContent = `Barcode detected: ${decodedText}. Looking up product...`;
+      statusEl.className = 'scanner-status';
+      
+      // Play a beep sound for feedback
+      playBeep();
+      
+      // Look up the barcode
+      await lookupBarcode(decodedText);
+    }
+    
+    async function lookupManualBarcode() {
+      const barcodeInput = document.getElementById('manual-barcode');
+      const barcode = barcodeInput.value.trim();
+      
+      if (!barcode) {
+        pantryShowToast('Please enter a barcode', 'error');
+        return;
+      }
+      
+      if (!/^\d{8,14}$/.test(barcode)) {
+        pantryShowToast('Barcode should be 8-14 digits', 'error');
+        return;
+      }
+      
+      const statusEl = document.getElementById('scanner-status');
+      statusEl.textContent = `Looking up barcode: ${barcode}...`;
+      statusEl.className = 'scanner-status';
+      
+      await lookupBarcode(barcode);
+    }
+    
+    async function lookupBarcode(barcode) {
+      const statusEl = document.getElementById('scanner-status');
+      const previewEl = document.getElementById('product-preview');
+      const addBtn = document.getElementById('add-scanned-item-btn');
+      
+      try {
+        const response = await fetch(`/api/ingredients/barcode/${barcode}`);
+        const data = await response.json();
+        
+        if (!response.ok || !data.found) {
+          statusEl.textContent = `❌ Product not found for barcode: ${barcode}. You can add it manually.`;
+          statusEl.className = 'scanner-status error';
+          previewEl.classList.add('hidden');
+          addBtn.classList.add('hidden');
+          
+          // Fill just the barcode in manual entry for user reference
+          document.getElementById('manual-barcode').value = barcode;
+          
+          // Resume scanning after a delay
+          setTimeout(resumeScanning, 3000);
+          return;
+        }
+        
+        // Store the product data
+        scannedProductData = data;
+        
+        // Show success status
+        statusEl.textContent = '✅ Product found!';
+        statusEl.className = 'scanner-status success';
+        
+        // Display product preview
+        displayProductPreview(data);
+        
+        // Show add button
+        addBtn.classList.remove('hidden');
+        
+      } catch (err) {
+        console.error('Error looking up barcode:', err);
+        statusEl.textContent = `❌ Error looking up barcode: ${err.message}`;
+        statusEl.className = 'scanner-status error';
+        
+        // Resume scanning after a delay
+        setTimeout(resumeScanning, 3000);
+      }
+    }
+    
+    function displayProductPreview(data) {
+      const previewEl = document.getElementById('product-preview');
+      
+      const allergenBadges = data.allergens && data.allergens.length > 0
+        ? `<div class="allergen-badges">
+            ${data.allergens.map(a => `<span class="allergen-badge">⚠️ ${capitalizeFirst(a)}</span>`).join('')}
+           </div>`
+        : '';
+      
+      const categoryIcons = {
+        produce: '🥬',
+        dairy: '🧈',
+        meat: '🥩',
+        bakery: '🍞',
+        pantry: '🥫',
+        spices: '🧂',
+        frozen: '🧊',
+        beverages: '🥤',
+        other: '📦'
+      };
+      
+      previewEl.innerHTML = `
+        <div class="product-header">
+          ${data.thumbnailUrl || data.imageUrl 
+            ? `<img src="${data.thumbnailUrl || data.imageUrl}" alt="${escapeHtml(data.name)}" class="product-image" onerror="this.style.display='none'">`
+            : '<div class="product-image" style="display:flex;align-items:center;justify-content:center;font-size:2rem;">📦</div>'
+          }
+          <div class="product-info">
+            <div class="product-name">${escapeHtml(data.name)}</div>
+            ${data.brand ? `<div class="product-brand">${escapeHtml(data.brand)}</div>` : ''}
+            <span class="product-category">${categoryIcons[data.category] || '📦'} ${capitalizeFirst(data.category)}</span>
+            ${allergenBadges}
+          </div>
+        </div>
+        ${data.quantity ? `<div style="margin-top:0.5rem;font-size:0.9rem;color:var(--text-muted)">Package: ${escapeHtml(data.quantity)}</div>` : ''}
+        ${data.nutrition && data.nutrition.calories ? `<div style="margin-top:0.25rem;font-size:0.9rem;color:var(--text-muted)">Calories: ${data.nutrition.calories} kcal per 100g</div>` : ''}
+      `;
+      
+      previewEl.classList.remove('hidden');
+    }
+    
+    function capitalizeFirst(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    
+    async function resumeScanning() {
+      if (html5QrCode && html5QrCode.getState() === Html5QrcodeScannerState.PAUSED) {
+        try {
+          await html5QrCode.resume();
+          document.getElementById('scanner-status').textContent = 'Point camera at a barcode...';
+          document.getElementById('scanner-status').className = 'scanner-status';
+        } catch (err) {
+          console.error('Error resuming scanner:', err);
+        }
+      }
+    }
+    
+    function addScannedItemToForm() {
+      if (!scannedProductData) {
+        pantryShowToast('No product data available', 'error');
+        return;
+      }
+      
+      // Fill the add form with scanned data
+      const nameInput = document.getElementById('ingredient-name');
+      const quantityInput = document.getElementById('quantity');
+      const unitInput = document.getElementById('unit');
+      const locationInput = document.getElementById('location');
+      
+      // Use product name, with brand if available
+      let productName = scannedProductData.name;
+      if (scannedProductData.brand && !productName.toLowerCase().includes(scannedProductData.brand.toLowerCase())) {
+        productName = `${scannedProductData.brand} ${productName}`;
+      }
+      nameInput.value = productName;
+      
+      // Set quantity to 1
+      quantityInput.value = 1;
+      
+      // Try to determine unit from package quantity
+      if (scannedProductData.quantity) {
+        const qtyMatch = scannedProductData.quantity.match(/(\d+(?:\.\d+)?)\s*(ml|l|g|kg|oz|lb)/i);
+        if (qtyMatch) {
+          const unitMap = {
+            'ml': 'ml',
+            'l': 'L',
+            'g': 'g',
+            'kg': 'kg',
+            'oz': 'oz',
+            'lb': 'lb'
+          };
+          unitInput.value = unitMap[qtyMatch[2].toLowerCase()] || '';
+        }
+      }
+      
+      // Set location based on category
+      const categoryToLocation = {
+        produce: 'refrigerator',
+        dairy: 'refrigerator',
+        meat: 'refrigerator',
+        frozen: 'freezer',
+        bakery: 'pantry',
+        pantry: 'pantry',
+        spices: 'pantry',
+        beverages: 'pantry',
+        other: 'pantry'
+      };
+      locationInput.value = categoryToLocation[scannedProductData.category] || 'pantry';
+      
+      // Close the scanner modal
+      closeBarcodeScanner();
+      
+      // Focus the name input so user can adjust if needed
+      nameInput.focus();
+      
+      pantryShowToast('Product info added to form! Adjust as needed and click Add Item.', 'success');
+    }
+    
+    async function closeBarcodeScanner() {
+      const modal = document.getElementById('barcode-scanner-modal');
+      
+      // Stop the scanner
+      if (html5QrCode) {
+        try {
+          if (html5QrCode.isScanning) {
+            await html5QrCode.stop();
+          }
+        } catch (err) {
+          console.error('Error stopping scanner:', err);
+        }
+        html5QrCode = null;
+      }
+      
+      // Reset state
+      scannedProductData = null;
+      
+      // Hide modal
+      modal.classList.add('hidden');
+      
+      // Clear the reader div
+      document.getElementById('barcode-reader').innerHTML = '';
+    }
+    
+    function playBeep() {
+      // Create a simple beep sound for scan feedback
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 1000;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.3;
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+      } catch (err) {
+        // Audio not supported, ignore
+      }
     }
   </script>
 </body>

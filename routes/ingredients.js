@@ -46,6 +46,17 @@ router.get('/categories', (req, res) => {
 });
 
 /**
+ * GET /api/ingredients/substitutes
+ * Get all substitution rules
+ */
+router.get('/substitutes', (req, res) => {
+  res.json({
+    success: true,
+    data: ingredients.getAllSubstitutions()
+  });
+});
+
+/**
  * GET /api/ingredients/allergens
  * Get all allergen definitions
  */
@@ -70,6 +81,74 @@ router.get('/dietary-flags', (req, res) => {
  */
 router.get('/units', (req, res) => {
   res.json(ingredients.UNITS);
+});
+
+/**
+ * GET /api/ingredients/substitute/:name
+ * Get substitutes for a specific ingredient
+ */
+router.get('/substitute/:name', async (req, res) => {
+  try {
+    const { name } = req.params;
+    const { checkPantry } = req.query;
+    
+    const result = ingredients.getSubstitutes(name);
+    
+    // Optionally filter to only substitutes available in pantry
+    if (checkPantry === 'true') {
+      const availableSubs = await ingredients.getAvailableSubstitutes(name);
+      result.availableInPantry = availableSubs;
+    }
+    
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    console.error('Error getting substitutes:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/ingredients/substitutes/bulk
+ * Get substitutes for multiple ingredients (with pantry check)
+ */
+router.post('/substitutes/bulk', async (req, res) => {
+  try {
+    const { ingredients: ingredientNames, checkPantry = true } = req.body;
+    
+    if (!Array.isArray(ingredientNames)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Array of ingredient names is required' 
+      });
+    }
+    
+    const results = {};
+    
+    for (const name of ingredientNames) {
+      const subs = ingredients.getSubstitutes(name);
+      
+      if (checkPantry) {
+        const available = await ingredients.getAvailableSubstitutes(name);
+        results[name] = {
+          ...subs,
+          availableInPantry: available
+        };
+      } else {
+        results[name] = subs;
+      }
+    }
+    
+    res.json({
+      success: true,
+      data: results
+    });
+  } catch (err) {
+    console.error('Error getting bulk substitutes:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 /**
@@ -197,6 +276,101 @@ router.post('/:id/price', async (req, res) => {
     console.error('Error adding price record:', err);
     res.status(500).json({ error: err.message });
   }
+});
+
+/**
+ * GET /api/ingredients/:id/price-history
+ * Get full price history with statistics for an ingredient
+ */
+router.get('/:id/price-history', async (req, res) => {
+  try {
+    const priceHistory = await ingredients.getPriceHistory(req.params.id);
+    res.json({
+      success: true,
+      data: priceHistory
+    });
+  } catch (err) {
+    if (err.message.includes('not found')) {
+      return res.status(404).json({ success: false, error: err.message });
+    }
+    console.error('Error getting price history:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/ingredients/price-history/:name
+ * Get price history by ingredient name
+ */
+router.get('/price-history/:name', async (req, res) => {
+  try {
+    const priceHistory = await ingredients.getPriceHistoryByName(req.params.name);
+    res.json({
+      success: true,
+      data: priceHistory
+    });
+  } catch (err) {
+    console.error('Error getting price history by name:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/ingredients/shelf-life/:category/:location
+ * Get default shelf life for a category and location
+ */
+router.get('/shelf-life/:category/:location', (req, res) => {
+  try {
+    const { category, location } = req.params;
+    const shelfLife = ingredients.getShelfLifeInfo(category, location);
+    res.json({
+      success: true,
+      data: shelfLife
+    });
+  } catch (err) {
+    console.error('Error getting shelf life:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/ingredients/shelf-life/suggest
+ * Get suggested expiration date for an ingredient
+ */
+router.get('/shelf-life/suggest', (req, res) => {
+  try {
+    const { name, category, location } = req.query;
+    
+    if (!name) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Ingredient name is required' 
+      });
+    }
+    
+    const suggestion = ingredients.getDefaultExpirationDate(name, category, location);
+    res.json({
+      success: true,
+      data: suggestion
+    });
+  } catch (err) {
+    console.error('Error getting shelf life suggestion:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/ingredients/shelf-life-defaults
+ * Get all shelf life defaults
+ */
+router.get('/shelf-life-defaults', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      byCategory: ingredients.SHELF_LIFE_DEFAULTS,
+      byIngredient: ingredients.INGREDIENT_SHELF_LIFE
+    }
+  });
 });
 
 /**
@@ -356,6 +530,83 @@ router.post('/pantry', async (req, res) => {
 });
 
 /**
+ * POST /api/ingredients/pantry/bulk
+ * Bulk add items to pantry
+ */
+router.post('/pantry/bulk', async (req, res) => {
+  try {
+    const { items } = req.body;
+    
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Array of items is required' });
+    }
+    
+    const results = await ingredients.bulkAddToPantry(items);
+    
+    res.status(201).json({
+      success: true,
+      added: results.success.length,
+      failed: results.errors.length,
+      items: results.success,
+      errors: results.errors
+    });
+  } catch (err) {
+    console.error('Error bulk adding to pantry:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/ingredients/pantry/frequent
+ * Get frequently added items (added 3+ times)
+ */
+router.get('/pantry/frequent', async (req, res) => {
+  try {
+    const { minCount = 3, limit = 15 } = req.query;
+    const items = await ingredients.getFrequentlyAddedItems(
+      parseInt(minCount),
+      parseInt(limit)
+    );
+    res.json(items);
+  } catch (err) {
+    console.error('Error getting frequent items:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/ingredients/pantry/insights
+ * Get shopping frequency insights
+ */
+router.get('/pantry/insights', async (req, res) => {
+  try {
+    const insights = await ingredients.getShoppingFrequencyInsights();
+    res.json({
+      success: true,
+      data: insights
+    });
+  } catch (err) {
+    console.error('Error getting shopping insights:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/ingredients/pantry/recent
+ * Get recently added items
+ */
+router.get('/pantry/recent', async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    const items = await ingredients.getRecentlyAddedItems(parseInt(limit));
+    res.json(items);
+  } catch (err) {
+    console.error('Error getting recent items:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * PUT /api/ingredients/pantry/:id
  * Update pantry item
  */
@@ -400,6 +651,153 @@ router.get('/pantry/check/:name', async (req, res) => {
   } catch (err) {
     console.error('Error checking pantry:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// =====================
+// Barcode Lookup Routes
+// =====================
+
+/**
+ * Map Open Food Facts categories to our category system
+ */
+function mapOpenFoodFactsCategory(offCategories) {
+  if (!offCategories) return 'other';
+  
+  const categoryText = offCategories.toLowerCase();
+  
+  // Check for specific category keywords
+  const categoryMappings = {
+    produce: ['fruit', 'vegetable', 'produce', 'fresh', 'salad', 'herb', 'lettuce', 'apple', 'banana', 'tomato', 'onion', 'potato', 'carrot'],
+    dairy: ['dairy', 'milk', 'cheese', 'yogurt', 'butter', 'cream', 'egg'],
+    meat: ['meat', 'poultry', 'chicken', 'beef', 'pork', 'fish', 'seafood', 'salmon', 'tuna', 'shrimp', 'sausage', 'bacon', 'ham'],
+    bakery: ['bread', 'bakery', 'baked', 'pastry', 'bun', 'roll', 'croissant', 'bagel', 'tortilla'],
+    pantry: ['canned', 'pasta', 'rice', 'cereal', 'grain', 'bean', 'sauce', 'oil', 'vinegar', 'condiment', 'soup', 'broth', 'flour', 'sugar', 'honey', 'syrup', 'nut butter', 'jam', 'jelly'],
+    spices: ['spice', 'seasoning', 'herb', 'pepper', 'salt', 'curry', 'cumin'],
+    frozen: ['frozen', 'ice cream', 'sorbet', 'gelato'],
+    beverages: ['beverage', 'drink', 'juice', 'soda', 'water', 'tea', 'coffee', 'wine', 'beer', 'milk']
+  };
+  
+  for (const [category, keywords] of Object.entries(categoryMappings)) {
+    if (keywords.some(keyword => categoryText.includes(keyword))) {
+      return category;
+    }
+  }
+  
+  return 'other';
+}
+
+/**
+ * Extract allergens from Open Food Facts data
+ */
+function extractAllergens(product) {
+  const allergens = [];
+  const allergenTags = product.allergens_tags || [];
+  const allergenText = (product.allergens || '').toLowerCase();
+  
+  const allergenMappings = {
+    dairy: ['milk', 'dairy', 'lactose'],
+    eggs: ['egg'],
+    fish: ['fish'],
+    shellfish: ['shellfish', 'crustacean', 'mollusc'],
+    treeNuts: ['nuts', 'almond', 'walnut', 'cashew', 'pistachio', 'hazelnut', 'pecan', 'macadamia'],
+    peanuts: ['peanut'],
+    wheat: ['wheat', 'gluten'],
+    soy: ['soy', 'soya'],
+    sesame: ['sesame']
+  };
+  
+  for (const [allergen, keywords] of Object.entries(allergenMappings)) {
+    const inTags = allergenTags.some(tag => 
+      keywords.some(kw => tag.toLowerCase().includes(kw))
+    );
+    const inText = keywords.some(kw => allergenText.includes(kw));
+    
+    if (inTags || inText) {
+      allergens.push(allergen);
+    }
+  }
+  
+  return allergens;
+}
+
+/**
+ * GET /api/ingredients/barcode/:barcode
+ * Look up product information from Open Food Facts by barcode
+ */
+router.get('/barcode/:barcode', async (req, res) => {
+  try {
+    const { barcode } = req.params;
+    
+    // Validate barcode format (should be numeric, typically 8-14 digits)
+    if (!/^\d{8,14}$/.test(barcode)) {
+      return res.status(400).json({ 
+        error: 'Invalid barcode format',
+        message: 'Barcode should be 8-14 digits'
+      });
+    }
+    
+    // Fetch from Open Food Facts API
+    const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+    
+    if (!response.ok) {
+      throw new Error(`Open Food Facts API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.status !== 1 || !data.product) {
+      return res.status(404).json({
+        error: 'Product not found',
+        message: 'This barcode was not found in the Open Food Facts database. You can add it manually.',
+        barcode
+      });
+    }
+    
+    const product = data.product;
+    
+    // Extract relevant information
+    const result = {
+      barcode,
+      found: true,
+      name: product.product_name || product.product_name_en || 'Unknown Product',
+      brand: product.brands || null,
+      genericName: product.generic_name || product.generic_name_en || null,
+      category: mapOpenFoodFactsCategory(product.categories),
+      categories: product.categories || null,
+      quantity: product.quantity || null,
+      servingSize: product.serving_size || null,
+      imageUrl: product.image_front_url || product.image_url || null,
+      thumbnailUrl: product.image_front_thumb_url || product.image_thumb_url || null,
+      allergens: extractAllergens(product),
+      allergenText: product.allergens || null,
+      ingredients: product.ingredients_text || product.ingredients_text_en || null,
+      nutrition: product.nutriments ? {
+        calories: product.nutriments['energy-kcal_100g'] || product.nutriments['energy-kcal'] || null,
+        fat: product.nutriments.fat_100g || product.nutriments.fat || null,
+        saturatedFat: product.nutriments['saturated-fat_100g'] || product.nutriments['saturated-fat'] || null,
+        carbohydrates: product.nutriments.carbohydrates_100g || product.nutriments.carbohydrates || null,
+        sugars: product.nutriments.sugars_100g || product.nutriments.sugars || null,
+        fiber: product.nutriments.fiber_100g || product.nutriments.fiber || null,
+        protein: product.nutriments.proteins_100g || product.nutriments.proteins || null,
+        sodium: product.nutriments.sodium_100g || product.nutriments.sodium || null,
+        salt: product.nutriments.salt_100g || product.nutriments.salt || null
+      } : null,
+      nutriscore: product.nutriscore_grade || null,
+      novaGroup: product.nova_group || null,
+      labels: product.labels || null,
+      origins: product.origins || null,
+      stores: product.stores || null,
+      openFoodFactsUrl: `https://world.openfoodfacts.org/product/${barcode}`
+    };
+    
+    res.json(result);
+  } catch (err) {
+    console.error('Error looking up barcode:', err);
+    res.status(500).json({ 
+      error: 'Failed to lookup barcode',
+      message: err.message
+    });
   }
 });
 

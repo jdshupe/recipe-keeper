@@ -182,6 +182,83 @@ router.patch('/:slug/notes', async (req, res) => {
   }
 });
 
+// GET /api/recipes/:slug/nutrition - Calculate recipe nutrition
+router.get('/:slug/nutrition', async (req, res) => {
+  try {
+    const recipe = await getRecipeBySlug(req.params.slug);
+    if (!recipe) {
+      return res.status(404).json({ error: 'Recipe not found', success: false });
+    }
+    
+    const nutrition = await ingredients.calculateRecipeNutrition(recipe);
+    res.json({ 
+      data: nutrition, 
+      success: nutrition.success,
+      error: nutrition.error 
+    });
+  } catch (err) {
+    console.error('Error calculating nutrition:', err);
+    res.status(500).json({ error: 'Failed to calculate nutrition', success: false });
+  }
+});
+
+// GET /api/recipes/:slug/cost - Estimate recipe cost
+router.get('/:slug/cost', async (req, res) => {
+  try {
+    const recipe = await getRecipeBySlug(req.params.slug);
+    if (!recipe) {
+      return res.status(404).json({ error: 'Recipe not found', success: false });
+    }
+    
+    const costEstimate = await ingredients.estimateRecipeCost(recipe);
+    res.json({ 
+      data: costEstimate, 
+      success: true 
+    });
+  } catch (err) {
+    console.error('Error estimating cost:', err);
+    res.status(500).json({ error: 'Failed to estimate recipe cost', success: false });
+  }
+});
+
+// GET /api/recipes/:slug/substitutes - Get substitutes for missing ingredients
+router.get('/:slug/substitutes', async (req, res) => {
+  try {
+    const recipe = await getRecipeBySlug(req.params.slug);
+    if (!recipe) {
+      return res.status(404).json({ error: 'Recipe not found', success: false });
+    }
+    
+    // Get missing ingredients from pantry comparison
+    const needed = await ingredients.getShoppingNeededForRecipe(recipe);
+    
+    // For each missing ingredient, find available substitutes
+    const substitutions = [];
+    for (const item of needed) {
+      const available = await ingredients.getAvailableSubstitutes(item.name);
+      if (available.length > 0) {
+        substitutions.push({
+          missing: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          substitutes: available
+        });
+      }
+    }
+    
+    res.json({ 
+      data: {
+        missingIngredients: needed.map(n => n.name),
+        substitutionsAvailable: substitutions
+      },
+      success: true 
+    });
+  } catch (err) {
+    console.error('Error getting substitutes:', err);
+    res.status(500).json({ error: 'Failed to get substitutes', success: false });
+  }
+});
+
 // GET /api/recipes/:slug - Get single recipe
 router.get('/:slug', async (req, res) => {
   try {

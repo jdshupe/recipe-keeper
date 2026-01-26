@@ -5,6 +5,108 @@ All notable changes to Recipe Keeper will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-01-26
+
+### Added
+- **Barcode Scanning**: Scan grocery items directly into pantry
+  - Camera-based barcode scanning using html5-qrcode
+  - Integration with Open Food Facts API (3M+ products)
+  - Auto-fills ingredient name, category, nutrition, allergens
+  - Manual barcode entry fallback
+  - Supports EAN-13, EAN-8, UPC-A, UPC-E, CODE-128 formats
+  
+- **Quick Add Features**: Faster pantry management
+  - Frequently Bought Items: One-click re-add items you buy often
+  - Recently Added: Quick access to last 10 items
+  - Common Staples: Pre-defined list of grocery essentials
+  
+- **Bulk Import**: Add multiple items at once
+  - Paste a list (one item per line with optional quantity/unit)
+  - CSV file upload with column mapping
+  - Preview and edit before import
+  
+- **Nutrition Display**: See recipe nutritional information
+  - Calculated from ingredient nutrition data
+  - Per-serving and total recipe views
+  - Shows partial data indicator when incomplete
+  - 60+ common ingredients with nutrition data
+  
+- **Ingredient Substitutions**: Cooking flexibility
+  - 50+ substitution rules (dairy, eggs, flour, oils, etc.)
+  - Quality indicators (great/good/okay)
+  - Conversion ratios included
+  - Shows available substitutes from your pantry
+  - Integrated into "What Can I Make?" page
+  
+- **Price Tracking**: Budget management
+  - Track prices paid per ingredient
+  - Store tracking (where you shop)
+  - Price history with trends (increasing/decreasing/stable)
+  - Recipe cost estimation on recipe page
+  - Export price data to CSV
+  
+- **Smart Expiration Dates**: Reduce food waste
+  - Auto-suggests expiration based on category and storage location
+  - Shows "typically good for X days" hints
+  - Specific overrides for common items (milk, eggs, etc.)
+  
+- **Shopping Insights**: Usage patterns
+  - Purchase frequency tracking
+  - "Running low soon" predictions
+  - Restock suggestions based on usage patterns
+  - Average time between purchases
+
+### API Endpoints Added
+- `GET /api/ingredients/barcode/:barcode` - Open Food Facts lookup
+- `GET /api/ingredients/pantry/frequent` - Frequently added items
+- `GET /api/ingredients/pantry/recent` - Recently added items
+- `POST /api/ingredients/pantry/bulk` - Bulk add items
+- `GET /api/ingredients/substitutes` - All substitution rules
+- `GET /api/ingredients/:id/substitutes` - Substitutes for ingredient
+- `GET /api/ingredients/:id/price-history` - Full price history
+- `GET /api/ingredients/shelf-life/:category/:location` - Shelf life defaults
+- `GET /api/ingredients/shelf-life/suggest` - Smart expiration suggestion
+- `GET /api/ingredients/shopping-insights` - Usage patterns
+- `GET /api/recipes/:slug/nutrition` - Recipe nutrition calculation
+- `GET /api/recipes/:slug/cost-estimate` - Recipe cost estimation
+- `GET /api/recipes/:slug/substitutes` - Missing ingredient substitutes
+
+---
+
+## [1.2.0] - 2026-01-26
+
+### Added
+- **Mobile Responsive Design**: Full mobile and tablet support
+  - Hamburger menu navigation for mobile devices
+  - Touch-friendly tap targets (44px+)
+  - Safe area insets for modern devices
+  - Landscape orientation optimizations
+  
+- **Ingredient Database**: Structured ingredient management
+  - Auto-detection for categories, allergens, dietary flags
+  - Pantry management (add, update, remove items)
+  - Storage location tracking (pantry/refrigerator/freezer)
+  - Expiration date tracking with alerts
+  
+- **Pantry Management** (`/pantry`):
+  - Add items with quantity, unit, location
+  - Quick quantity adjustments (+/-)
+  - Expiration alerts (expiring soon, expired)
+  - Filter by location
+  - Search functionality
+  
+- **"What Can I Make?"** (`/what-can-i-make`):
+  - Recipe suggestions based on pantry contents
+  - Match percentage display
+  - Missing ingredients list
+  - "Add Missing to Shopping List" action
+
+### Keyboard Shortcuts
+- `P` - Navigate to Pantry
+- `W` - Navigate to What Can I Make?
+
+---
+
 ## [1.0.0] - 2026-01-08
 
 ### Added

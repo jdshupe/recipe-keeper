@@ -227,6 +227,51 @@
       color: var(--error-text);
     }
 
+    .missing-list li.has-substitute::before {
+      content: "↔";
+      color: var(--success-text);
+    }
+
+    .substitute-hint {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      margin-left: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .substitute-hint.quality-great {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--success-border);
+    }
+
+    .substitute-hint.quality-good {
+      background: #fff8e1;
+      color: #f57c00;
+      border: 1px solid #ffe082;
+    }
+
+    .dark-mode .substitute-hint.quality-good {
+      background: #3d3014;
+      color: #ffb74d;
+      border-color: #5c4d1f;
+    }
+
+    .substitute-hint.quality-okay {
+      background: #fff3e0;
+      color: #e65100;
+      border: 1px solid #ffcc80;
+    }
+
+    .dark-mode .substitute-hint.quality-okay {
+      background: #3d2814;
+      color: #ffab40;
+      border-color: #5c3d1f;
+    }
+
     .match-card-actions {
       padding: 0.75rem 1.25rem;
       border-top: 1px solid var(--border-light);
@@ -413,6 +458,7 @@
   <script>
     let allMatches = [];
     let shoppingLists = [];
+    let substitutionCache = {};
 
     // Initialize page
     document.addEventListener('DOMContentLoaded', () => {
@@ -448,6 +494,9 @@
           return;
         }
         
+        // Preload substitutions for missing ingredients
+        await preloadSubstitutions(allMatches);
+        
         filterAndDisplayMatches();
       } catch (err) {
         console.error('Error loading pantry matches:', err);
@@ -458,6 +507,59 @@
           </div>
         `;
       }
+    }
+    
+    async function preloadSubstitutions(matches) {
+      // Collect all unique missing ingredients
+      const allMissing = new Set();
+      matches.forEach(m => m.missing.forEach(item => allMissing.add(item)));
+      
+      if (allMissing.size === 0) return;
+      
+      try {
+        const result = await api('/ingredients/substitutes/bulk', {
+          method: 'POST',
+          body: { ingredients: Array.from(allMissing), checkPantry: true }
+        });
+        
+        if (result.success) {
+          substitutionCache = result.data;
+        }
+      } catch (err) {
+        console.error('Error loading substitutions:', err);
+      }
+    }
+    
+    function getSubstituteHint(ingredientName) {
+      const subs = substitutionCache[ingredientName];
+      if (!subs || !subs.availableInPantry || subs.availableInPantry.length === 0) {
+        return null;
+      }
+      
+      // Get the best available substitute
+      const bestSub = subs.availableInPantry[0];
+      return {
+        name: bestSub.substitute,
+        quality: bestSub.quality,
+        notes: bestSub.notes,
+        ratio: bestSub.ratio
+      };
+    }
+    
+    function renderSubstituteHint(sub) {
+      if (!sub) return '';
+      
+      const qualityEmoji = {
+        great: '✓',
+        good: '○',
+        okay: '△'
+      };
+      
+      return `
+        <span class="substitute-hint quality-${sub.quality}" title="${sub.notes || ''}">
+          ${qualityEmoji[sub.quality] || ''} Use ${sub.name}
+        </span>
+      `;
     }
 
     async function loadShoppingLists() {
@@ -517,14 +619,27 @@
           ? `<img src="${recipe.image}" alt="${escapeHtml(recipe.title)}" loading="lazy">`
           : '🍽️';
         
+        // Build missing ingredients list with substitution hints
+        const missingItemsHtml = match.missing.map(item => {
+          const sub = getSubstituteHint(item);
+          const hasSubClass = sub ? 'has-substitute' : '';
+          return `<li class="${hasSubClass}">${escapeHtml(item)}${renderSubstituteHint(sub)}</li>`;
+        }).join('');
+        
+        // Count substitutable items
+        const substitutableCount = match.missing.filter(item => getSubstituteHint(item)).length;
+        const substitutionNote = substitutableCount > 0 
+          ? `<span class="substitution-note">(${substitutableCount} can be substituted)</span>` 
+          : '';
+        
         const missingHtml = match.missing.length > 0 ? `
           <div class="missing-section">
             <button class="missing-toggle" onclick="toggleMissing(this, event)">
               <span class="chevron">▼</span>
-              <span>${match.missing.length} missing ingredient${match.missing.length > 1 ? 's' : ''}</span>
+              <span>${match.missing.length} missing ingredient${match.missing.length > 1 ? 's' : ''} ${substitutionNote}</span>
             </button>
             <ul class="missing-list">
-              ${match.missing.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+              ${missingItemsHtml}
             </ul>
           </div>
         ` : '';
