@@ -1,0 +1,4059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pantry - Recipe Keeper</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <!-- HTML5 QRCode Library for Barcode Scanning -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script>
+    // Apply dark mode immediately to prevent flash
+    if (localStorage.getItem('darkMode') === 'true' || 
+        (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+  <style>
+    /* Pantry-specific styles */
+    .pantry-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .pantry-stat {
+      background: var(--bg-card);
+      padding: 1rem;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border-light);
+    }
+    
+    .pantry-stat .stat-icon {
+      font-size: 1.5rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    
+    .pantry-stat .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text-heading);
+      display: block;
+    }
+    
+    .pantry-stat .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    
+    .expiring-alert {
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .expiring-alert.warning {
+      background: #fff8e1;
+      border-color: #ffe082;
+    }
+    
+    .dark-mode .expiring-alert.warning {
+      background: #3d3014;
+      border-color: #5c4d1f;
+    }
+    
+    .expiring-alert h3 {
+      margin: 0 0 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .expiring-alert ul {
+      margin: 0;
+      padding-left: 1.5rem;
+    }
+    
+    .expiring-alert li {
+      padding: 0.25rem 0;
+    }
+    
+    .location-section {
+      background: var(--bg-card);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+    
+    .location-header {
+      background: var(--bg-hover);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .location-header:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .location-header h3 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .location-header .item-count {
+      background: var(--category-count-bg);
+      color: var(--category-count-text);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+    }
+    
+    .location-items {
+      padding: 1rem 1.5rem;
+    }
+    
+    .location-items.collapsed {
+      display: none;
+    }
+    
+    .pantry-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .pantry-item:last-child {
+      border-bottom: none;
+    }
+    
+    .pantry-item:hover {
+      background: var(--bg-hover);
+    }
+    
+    .pantry-item.expiring-soon {
+      background: #fff8e1;
+    }
+    
+    .dark-mode .pantry-item.expiring-soon {
+      background: #3d3014;
+    }
+    
+    .pantry-item.expired {
+      background: var(--error-bg);
+      opacity: 0.8;
+    }
+    
+    .pantry-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: var(--checkbox-accent);
+    }
+    
+    .pantry-item .item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .pantry-item .item-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      display: block;
+    }
+    
+    .pantry-item .item-details {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .pantry-item .expiration-badge {
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .expiration-badge.expired {
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+    
+    .expiration-badge.warning {
+      background: #fff8e1;
+      color: #e65100;
+    }
+    
+    .dark-mode .expiration-badge.warning {
+      background: #3d3014;
+      color: #ffb74d;
+    }
+    
+    .pantry-item .quantity-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .quantity-controls .qty-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .quantity-controls .qty-btn:hover {
+      background: var(--bg-hover);
+    }
+    
+    .quantity-controls .qty-value {
+      min-width: 40px;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .pantry-item .item-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .item-actions .action-btn {
+      padding: 0.5rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 4px;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    
+    .item-actions .action-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    
+    .item-actions .action-btn.delete:hover {
+      background: var(--danger-bg);
+      color: var(--danger-text);
+    }
+    
+    /* Add Pantry Item Form */
+    .add-pantry-form {
+      background: var(--bg-card);
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 2rem;
+      border: 1px solid var(--border-light);
+    }
+    
+    .add-pantry-form h2 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .form-row-dates {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 1rem;
+      align-items: end;
+    }
+    
+    /* Tablet breakpoint (768px - 1024px) */
+    @media (min-width: 768px) and (max-width: 1024px) {
+      .form-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .form-row-dates {
+        grid-template-columns: 1fr 1fr;
+      }
+      .form-row-dates .btn {
+        grid-column: span 2;
+        justify-self: start;
+      }
+    }
+    
+    /* Mobile breakpoint */
+    @media (max-width: 767px) {
+      .form-row, .form-row-dates {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .autocomplete-wrapper {
+      position: relative;
+    }
+    
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .autocomplete-list.hidden {
+      display: none;
+    }
+    
+    .autocomplete-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+    
+    .autocomplete-item:hover,
+    .autocomplete-item.selected {
+      background: var(--bg-hover);
+    }
+    
+    .autocomplete-item .item-category {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    
+    /* Filter & Search */
+    .pantry-controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .pantry-controls .search-input {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .location-filter {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .location-filter .filter-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+    
+    .location-filter .filter-btn:hover {
+      background: var(--bg-hover);
+    }
+    
+    .location-filter .filter-btn.active {
+      background: var(--accent-primary);
+      color: #fff;
+      border-color: var(--accent-primary);
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+    }
+    
+    .empty-state .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    /* Edit Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.hidden {
+      display: none;
+    }
+    
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: var(--modal-backdrop);
+    }
+    
+    .modal-content {
+      position: relative;
+      background: var(--modal-bg);
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .modal-header h2 {
+      margin: 0;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0;
+      line-height: 1;
+    }
+    
+    .modal-close:hover {
+      color: var(--text-primary);
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+    }
+    
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      background: var(--modal-footer-bg);
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+    
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .page-header h1 {
+      margin: 0;
+    }
+    
+    /* Barcode Scanner Styles */
+    .scan-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+    }
+    
+    .scan-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .scan-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .form-header h2 {
+      margin: 0;
+    }
+    
+    #barcode-scanner-modal .modal-content {
+      max-width: 600px;
+    }
+    
+    #barcode-reader {
+      width: 100%;
+      min-height: 300px;
+    }
+    
+    #barcode-reader video {
+      border-radius: 8px;
+    }
+    
+    .barcode-manual-entry {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-light);
+    }
+    
+    .barcode-manual-entry .form-row-inline {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .barcode-manual-entry input {
+      flex: 1;
+    }
+    
+    .scanner-status {
+      text-align: center;
+      padding: 1rem;
+      color: var(--text-muted);
+    }
+    
+    .scanner-status.error {
+      color: var(--error-text);
+      background: var(--error-bg);
+      border-radius: 8px;
+    }
+    
+    .scanner-status.success {
+      color: var(--success-text);
+      background: var(--success-bg);
+      border-radius: 8px;
+    }
+    
+    .product-preview {
+      background: var(--bg-hover);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .product-preview .product-header {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    
+    .product-preview .product-image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: var(--bg-secondary);
+    }
+    
+    .product-preview .product-info {
+      flex: 1;
+    }
+    
+    .product-preview .product-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .product-preview .product-brand {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    
+    .product-preview .product-category {
+      display: inline-block;
+      background: var(--accent-primary);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    
+    .product-preview .allergen-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-top: 0.5rem;
+    }
+    
+    .product-preview .allergen-badge {
+      background: var(--error-bg);
+      color: var(--error-text);
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    
+    .camera-select-wrapper {
+      margin-bottom: 1rem;
+    }
+    
+    .camera-select-wrapper label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Open Food Facts Contribution Styles */
+    .contribute-intro, .settings-intro {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    
+    .settings-intro a {
+      color: var(--accent-primary);
+    }
+    
+    .contribute-nutrition-section {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--bg-hover);
+      border-radius: 8px;
+    }
+    
+    .contribute-nutrition-section summary {
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+    }
+    
+    .contribute-nutrition-section[open] summary {
+      margin-bottom: 1rem;
+    }
+    
+    .nutrition-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+    }
+    
+    .nutrition-grid .form-group {
+      margin-bottom: 0;
+    }
+    
+    .nutrition-grid .form-label {
+      font-size: 0.8rem;
+    }
+    
+    .nutrition-grid .form-input {
+      padding: 0.5rem;
+      font-size: 0.9rem;
+    }
+    
+    .toggle-label {
+      display: flex !important;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
+    
+    .toggle-label input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent-primary);
+    }
+    
+    #off-credentials-section {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--bg-hover);
+      border-radius: 8px;
+    }
+    
+    #off-login-status {
+      margin-left: 0.5rem;
+      font-size: 0.9rem;
+    }
+    
+    #off-login-status.success {
+      color: var(--success-text);
+    }
+    
+    #off-login-status.error {
+      color: var(--error-text);
+    }
+    
+    .off-settings-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.5rem;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    
+    .off-settings-btn:hover {
+      background: var(--bg-hover);
+      color: var(--accent-primary);
+    }
+
+    /* Quick-Add Section Styles */
+    .quick-add-section {
+      background: var(--bg-card);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+    
+    .quick-add-header {
+      background: var(--bg-hover);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .quick-add-header:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .quick-add-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .quick-add-header .toggle-icon {
+      transition: transform 0.2s;
+    }
+    
+    .quick-add-header.collapsed .toggle-icon {
+      transform: rotate(-90deg);
+    }
+    
+    .quick-add-content {
+      padding: 1rem 1.5rem;
+    }
+    
+    .quick-add-content.collapsed {
+      display: none;
+    }
+    
+    .quick-add-category {
+      margin-bottom: 1.5rem;
+    }
+    
+    .quick-add-category:last-child {
+      margin-bottom: 0;
+    }
+    
+    .quick-add-category h3 {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin: 0 0 0.75rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .quick-add-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    /* Renamed to avoid conflict with global .quick-add-btn in style.css */
+    .pantry-quick-add-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: all 0.2s;
+      white-space: nowrap;
+      min-height: 40px;
+      min-width: auto;
+      box-sizing: border-box;
+      line-height: 1.2;
+      font-family: inherit;
+    }
+    
+    .pantry-quick-add-btn:hover {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+      transform: translateY(-1px);
+    }
+    
+    .pantry-quick-add-btn:active {
+      transform: translateY(0);
+    }
+    
+    .pantry-quick-add-btn .item-count {
+      font-size: 0.75rem;
+      background: var(--bg-hover);
+      padding: 0.125rem 0.5rem;
+      border-radius: 10px;
+      color: var(--text-muted);
+      margin-left: 0.25rem;
+    }
+    
+    .pantry-quick-add-btn:hover .item-count {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+    
+    /* Tablet/Mobile quick-add buttons */
+    @media (max-width: 1024px) {
+      .pantry-quick-add-btn {
+        padding: 0.75rem 1.25rem;
+        font-size: 1rem;
+        min-height: 44px;
+      }
+      
+      .quick-add-items {
+        gap: 0.625rem;
+      }
+    }
+    
+    .quick-add-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 0.9rem;
+    }
+    
+    /* Bulk Import Button */
+    .bulk-import-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+    
+    .bulk-import-btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-primary);
+    }
+    
+    /* Bulk Import Modal */
+    #bulk-import-modal .modal-content {
+      max-width: 700px;
+    }
+    
+    .import-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid var(--border-light);
+    }
+    
+    .import-tab {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      position: relative;
+      transition: color 0.2s;
+    }
+    
+    .import-tab:hover {
+      color: var(--text-primary);
+    }
+    
+    .import-tab.active {
+      color: var(--accent-primary);
+    }
+    
+    .import-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent-primary);
+    }
+    
+    .import-panel {
+      display: none;
+    }
+    
+    .import-panel.active {
+      display: block;
+    }
+    
+    .import-textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      resize: vertical;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+    
+    .import-textarea::placeholder {
+      color: var(--text-muted);
+    }
+    
+    .import-help {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    
+    .csv-upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .csv-upload-area:hover {
+      border-color: var(--accent-primary);
+      background: var(--bg-hover);
+    }
+    
+    .csv-upload-area.drag-over {
+      border-color: var(--accent-primary);
+      background: var(--accent-bg);
+    }
+    
+    .csv-upload-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .csv-upload-text {
+      color: var(--text-muted);
+    }
+    
+    .csv-file-input {
+      display: none;
+    }
+    
+    .preview-section {
+      margin-top: 1rem;
+      border-top: 1px solid var(--border-light);
+      padding-top: 1rem;
+    }
+    
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    
+    .preview-header h4 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    
+    .preview-count {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    
+    .preview-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+    }
+    
+    .preview-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.9rem;
+    }
+    
+    .preview-item:last-child {
+      border-bottom: none;
+    }
+    
+    .preview-item.error {
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+    
+    .preview-item .remove-btn {
+      margin-left: auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0.25rem;
+      font-size: 1rem;
+    }
+    
+    .preview-item .remove-btn:hover {
+      color: var(--danger-text);
+    }
+    
+    .import-result {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+    
+    .import-result.success {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--success-border);
+    }
+    
+    .import-result.partial {
+      background: #fff8e1;
+      color: #e65100;
+      border: 1px solid #ffe082;
+    }
+    
+    .dark-mode .import-result.partial {
+      background: #3d3014;
+      color: #ffb74d;
+      border-color: #5c4d1f;
+    }
+    
+    .import-result.error {
+      background: var(--error-bg);
+      color: var(--error-text);
+      border: 1px solid var(--error-border);
+    }
+    
+    /* Price Tracking Styles */
+    .price-input-group {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+    
+    .price-input-group .form-group {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .price-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+    
+    .expiration-hint {
+      font-size: 0.75rem;
+      color: var(--accent-primary);
+      margin-top: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .expiration-hint.warning {
+      color: #e65100;
+    }
+    
+    .dark-mode .expiration-hint.warning {
+      color: #ffb74d;
+    }
+    
+    /* Shopping Insights Section */
+    .insights-section {
+      background: var(--bg-card);
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+    
+    .insights-header {
+      background: var(--bg-hover);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .insights-header:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .insights-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .insights-content {
+      padding: 1rem 1.5rem;
+    }
+    
+    .insights-content.collapsed {
+      display: none;
+    }
+    
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    
+    .insight-card {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid var(--border-light);
+    }
+    
+    .insight-card h4 {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .insight-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .insight-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .insight-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .insight-list .item-name {
+      font-weight: 500;
+    }
+    
+    .insight-list .item-detail {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    
+    .restock-badge {
+      background: #fff8e1;
+      color: #e65100;
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .dark-mode .restock-badge {
+      background: #3d3014;
+      color: #ffb74d;
+    }
+    
+    .empty-insight {
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 1rem;
+    }
+    
+    /* Price History Modal */
+    #price-history-modal .modal-content {
+      max-width: 600px;
+    }
+    
+    .price-history-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .price-history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .price-history-item:last-child {
+      border-bottom: none;
+    }
+    
+    .price-history-item .price-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .price-history-item .price-value {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+    }
+    
+    .price-history-item .price-detail {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    
+    .price-history-item .price-date {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    
+    .price-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--bg-hover);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    
+    .price-stat {
+      text-align: center;
+    }
+    
+    .price-stat .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+    }
+    
+    .price-stat .stat-value {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .price-trend {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    
+    .price-trend.increasing {
+      color: #d32f2f;
+      background: #ffebee;
+    }
+    
+    .price-trend.decreasing {
+      color: #388e3c;
+      background: #e8f5e9;
+    }
+    
+    .dark-mode .price-trend.increasing {
+      background: #3d1f1f;
+      color: #ef5350;
+    }
+    
+    .dark-mode .price-trend.decreasing {
+      background: #1f3d1f;
+      color: #66bb6a;
+    }
+    
+    .pantry-item .item-price {
+      font-size: 0.85rem;
+      color: var(--accent-primary);
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <a href="/" class="logo">🍳 Recipe Keeper</a>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/recipes.html">Recipes</a>
+        <a href="/collections.html">Collections</a>
+        <a href="/shopping-lists.html">Shopping Lists</a>
+        <a href="/pantry.html" class="active">Pantry</a>
+      </div>
+      <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
+    </div>
+  </nav>
+  <div class="mobile-nav-overlay"></div>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>🏪 My Pantry</h1>
+      <a href="/api/ingredients" target="_blank" class="btn btn-secondary btn-small">📚 Ingredient Database</a>
+    </div>
+    
+    <!-- Stats Section -->
+    <div class="pantry-stats">
+      <div class="pantry-stat">
+        <span class="stat-icon">📦</span>
+        <span class="stat-value" id="stat-total">-</span>
+        <span class="stat-label">Total Items</span>
+      </div>
+      <div class="pantry-stat">
+        <span class="stat-icon">🧊</span>
+        <span class="stat-value" id="stat-pantry">-</span>
+        <span class="stat-label">Pantry</span>
+      </div>
+      <div class="pantry-stat">
+        <span class="stat-icon">❄️</span>
+        <span class="stat-value" id="stat-refrigerator">-</span>
+        <span class="stat-label">Refrigerator</span>
+      </div>
+      <div class="pantry-stat">
+        <span class="stat-icon">🥶</span>
+        <span class="stat-value" id="stat-freezer">-</span>
+        <span class="stat-label">Freezer</span>
+      </div>
+    </div>
+
+    <!-- Expiring Items Alert -->
+    <div id="expiring-alert" class="expiring-alert warning hidden">
+      <h3>⚠️ Items Expiring Soon</h3>
+      <ul id="expiring-list"></ul>
+    </div>
+    
+    <div id="expired-alert" class="expiring-alert hidden">
+      <h3>🚨 Expired Items</h3>
+      <ul id="expired-list"></ul>
+    </div>
+
+    <!-- Quick-Add Section -->
+    <div class="quick-add-section">
+      <div class="quick-add-header" onclick="toggleQuickAdd()">
+        <h2>⚡ Quick Add</h2>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="quick-add-content" id="quick-add-content">
+        <!-- Frequently Bought -->
+        <div class="quick-add-category" id="frequent-items-section">
+          <h3>🔄 Frequently Bought</h3>
+          <div class="quick-add-items" id="frequent-items">
+            <span class="quick-add-empty">Loading...</span>
+          </div>
+        </div>
+        
+        <!-- Recent Items -->
+        <div class="quick-add-category" id="recent-items-section">
+          <h3>🕐 Recently Added</h3>
+          <div class="quick-add-items" id="recent-items">
+            <span class="quick-add-empty">Loading...</span>
+          </div>
+        </div>
+        
+        <!-- Common Staples -->
+        <div class="quick-add-category">
+          <h3>🛒 Common Staples</h3>
+          <div class="quick-add-items" id="staple-items">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Pantry Item Form -->
+    <div class="add-pantry-form">
+      <div class="form-header">
+        <h2>➕ Add to Pantry</h2>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="bulk-import-btn" onclick="openBulkImportModal()">
+            📋 Bulk Import
+          </button>
+          <button type="button" class="scan-btn" onclick="openBarcodeScanner()">
+            📷 Scan Barcode
+          </button>
+        </div>
+      </div>
+      <form id="add-pantry-form">
+        <div class="form-row">
+          <div class="form-group autocomplete-wrapper">
+            <label class="form-label" for="ingredient-name">Ingredient Name *</label>
+            <input type="text" class="form-input" id="ingredient-name" placeholder="Start typing..." required autocomplete="off">
+            <div id="autocomplete-list" class="autocomplete-list hidden"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="quantity">Quantity</label>
+            <input type="number" class="form-input" id="quantity" placeholder="1" min="0" step="0.1" value="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="unit">Unit</label>
+            <select class="form-input" id="unit">
+              <option value="">None</option>
+              <option value="piece">piece</option>
+              <option value="lb">lb</option>
+              <option value="oz">oz</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="cup">cup</option>
+              <option value="tbsp">tbsp</option>
+              <option value="tsp">tsp</option>
+              <option value="ml">ml</option>
+              <option value="L">L</option>
+              <option value="bottle">bottle</option>
+              <option value="can">can</option>
+              <option value="bag">bag</option>
+              <option value="box">box</option>
+              <option value="jar">jar</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="location">Location *</label>
+            <select class="form-input" id="location" required onchange="onLocationChange()">
+              <option value="pantry">🧊 Pantry</option>
+              <option value="refrigerator">❄️ Refrigerator</option>
+              <option value="freezer">🥶 Freezer</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row-dates">
+          <div class="form-group">
+            <label class="form-label" for="purchase-date">Purchase Date</label>
+            <input type="date" class="form-input" id="purchase-date">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="expiration-date">Expiration Date</label>
+            <input type="date" class="form-input" id="expiration-date">
+            <div id="expiration-hint" class="expiration-hint" style="display: none;"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="notes">Notes</label>
+            <input type="text" class="form-input" id="notes" placeholder="Optional notes...">
+          </div>
+          <button type="submit" class="btn btn-primary">Add Item</button>
+        </div>
+        <!-- Price Tracking Row (Optional) -->
+        <details class="price-tracking-details" style="margin-top: 1rem;">
+          <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.9rem;">💰 Track Price (optional)</summary>
+          <div class="price-input-group" style="margin-top: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label" for="price-paid">Price Paid ($)</label>
+              <input type="number" class="form-input" id="price-paid" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="store">Store</label>
+              <input type="text" class="form-input" id="store" list="store-list" placeholder="Where you bought it">
+              <datalist id="store-list">
+                <option value="Walmart">
+                <option value="Target">
+                <option value="Costco">
+                <option value="Kroger">
+                <option value="Safeway">
+                <option value="Whole Foods">
+                <option value="Trader Joe's">
+                <option value="Aldi">
+                <option value="Amazon">
+                <option value="Local Store">
+              </datalist>
+            </div>
+          </div>
+          <div class="price-hint">Price tracking helps estimate recipe costs</div>
+        </details>
+      </form>
+    </div>
+
+    <!-- Shopping Insights Section -->
+    <div class="insights-section" id="insights-section" style="display: none;">
+      <div class="insights-header" onclick="toggleInsights()">
+        <h2>📊 Shopping Insights</h2>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="insights-content" id="insights-content">
+        <div class="insights-grid">
+          <!-- Restock Suggestions -->
+          <div class="insight-card">
+            <h4>🔔 Time to Restock</h4>
+            <ul class="insight-list" id="restock-suggestions">
+              <li class="empty-insight">Loading...</li>
+            </ul>
+          </div>
+          
+          <!-- Shopping Patterns -->
+          <div class="insight-card">
+            <h4>📈 Shopping Patterns</h4>
+            <ul class="insight-list" id="shopping-patterns">
+              <li class="empty-insight">Loading...</li>
+            </ul>
+          </div>
+          
+          <!-- Running Low -->
+          <div class="insight-card">
+            <h4>⚠️ Running Low</h4>
+            <ul class="insight-list" id="running-low">
+              <li class="empty-insight">Loading...</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="pantry-controls">
+      <input type="text" class="form-input search-input" id="pantry-search" placeholder="🔍 Search pantry items...">
+      <div class="location-filter">
+        <button class="filter-btn active" data-location="all">All</button>
+        <button class="filter-btn" data-location="pantry">🧊 Pantry</button>
+        <button class="filter-btn" data-location="refrigerator">❄️ Refrigerator</button>
+        <button class="filter-btn" data-location="freezer">🥶 Freezer</button>
+      </div>
+    </div>
+
+    <!-- Pantry Items -->
+    <div id="pantry-items">
+      <div class="loading"><span class="spinner"></span> Loading pantry items...</div>
+    </div>
+  </main>
+
+  <!-- Edit Item Modal -->
+  <div id="edit-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeEditModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Pantry Item</h2>
+        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+      </div>
+      <form id="edit-pantry-form">
+        <div class="modal-body">
+          <input type="hidden" id="edit-id">
+          <div class="form-group">
+            <label class="form-label" for="edit-name">Item Name</label>
+            <input type="text" class="form-input" id="edit-name" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-quantity">Quantity</label>
+            <input type="number" class="form-input" id="edit-quantity" min="0" step="0.1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-unit">Unit</label>
+            <select class="form-input" id="edit-unit">
+              <option value="">None</option>
+              <option value="piece">piece</option>
+              <option value="lb">lb</option>
+              <option value="oz">oz</option>
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="cup">cup</option>
+              <option value="tbsp">tbsp</option>
+              <option value="tsp">tsp</option>
+              <option value="ml">ml</option>
+              <option value="L">L</option>
+              <option value="bottle">bottle</option>
+              <option value="can">can</option>
+              <option value="bag">bag</option>
+              <option value="box">box</option>
+              <option value="jar">jar</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-location">Location</label>
+            <select class="form-input" id="edit-location">
+              <option value="pantry">🧊 Pantry</option>
+              <option value="refrigerator">❄️ Refrigerator</option>
+              <option value="freezer">🥶 Freezer</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-expiration">Expiration Date</label>
+            <input type="date" class="form-input" id="edit-expiration">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-notes">Notes</label>
+            <input type="text" class="form-input" id="edit-notes" placeholder="Optional notes...">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bulk Import Modal -->
+  <div id="bulk-import-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeBulkImportModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📋 Bulk Import</h2>
+        <button class="modal-close" onclick="closeBulkImportModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="import-tabs">
+          <button class="import-tab active" data-panel="text-import" onclick="switchImportTab('text-import')">
+            📝 Paste List
+          </button>
+          <button class="import-tab" data-panel="csv-import" onclick="switchImportTab('csv-import')">
+            📄 Upload CSV
+          </button>
+        </div>
+        
+        <!-- Text Import Panel -->
+        <div class="import-panel active" id="text-import-panel">
+          <textarea class="import-textarea" id="import-text" 
+            placeholder="Paste your items here, one per line. Examples:
+2 lb chicken breast
+1 gallon milk
+eggs
+3 onions
+1/2 lb ground beef
+olive oil"></textarea>
+          <div class="import-help">
+            Format: "quantity unit item" or just "item name"<br>
+            Supported units: lb, oz, kg, g, cup, tbsp, tsp, gallon, ml, L, piece, can, bottle, bag, box, jar
+          </div>
+        </div>
+        
+        <!-- CSV Import Panel -->
+        <div class="import-panel" id="csv-import-panel">
+          <div class="csv-upload-area" id="csv-upload-area" onclick="document.getElementById('csv-file-input').click()">
+            <div class="csv-upload-icon">📁</div>
+            <div class="csv-upload-text">
+              Click to upload or drag & drop a CSV file<br>
+              <small>Columns: name, quantity (optional), unit (optional), location (optional), expiration (optional)</small>
+            </div>
+          </div>
+          <input type="file" id="csv-file-input" class="csv-file-input" accept=".csv" onchange="handleCSVUpload(event)">
+        </div>
+        
+        <!-- Preview Section -->
+        <div class="preview-section" id="import-preview-section" style="display:none;">
+          <div class="preview-header">
+            <h4>Preview Items</h4>
+            <span class="preview-count" id="preview-count">0 items</span>
+          </div>
+          <div class="preview-list" id="import-preview-list">
+            <!-- Filled dynamically -->
+          </div>
+        </div>
+        
+        <!-- Import Result -->
+        <div id="import-result" class="import-result" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeBulkImportModal()">Cancel</button>
+        <button type="button" class="btn btn-secondary" id="parse-import-btn" onclick="parseImportItems()">
+          👁️ Preview
+        </button>
+        <button type="button" class="btn btn-primary" id="confirm-import-btn" onclick="confirmBulkImport()" disabled>
+          ✅ Add All Items
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barcode Scanner Modal -->
+  <div id="barcode-scanner-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeBarcodeScanner()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📷 Scan Barcode</h2>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button type="button" class="off-settings-btn" onclick="openOffSettingsModal()" title="Open Food Facts Settings">
+            🌍
+          </button>
+          <button class="modal-close" onclick="closeBarcodeScanner()">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div id="scanner-status" class="scanner-status">
+          Initializing camera...
+        </div>
+        
+        <div class="camera-select-wrapper hidden" id="camera-select-wrapper">
+          <label for="camera-select">Select Camera:</label>
+          <select class="form-input" id="camera-select" onchange="switchCamera()"></select>
+        </div>
+        
+        <div id="barcode-reader"></div>
+        
+        <div id="product-preview" class="product-preview hidden">
+          <!-- Filled dynamically when product is found -->
+        </div>
+        
+        <div class="barcode-manual-entry">
+          <label class="form-label">Or enter barcode manually:</label>
+          <div class="form-row-inline">
+            <input type="text" class="form-input" id="manual-barcode" placeholder="Enter barcode (8-14 digits)" 
+                   pattern="[0-9]{8,14}" maxlength="14">
+            <button type="button" class="btn btn-secondary" onclick="lookupManualBarcode()">Look Up</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeBarcodeScanner()">Cancel</button>
+        <button type="button" class="btn btn-primary hidden" id="add-scanned-item-btn" onclick="addScannedItemToForm()">
+          Add to Form
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Price History Modal -->
+  <div id="price-history-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closePriceHistoryModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>💰 Price History</h2>
+        <button class="modal-close" onclick="closePriceHistoryModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h3 id="price-history-ingredient">Loading...</h3>
+        
+        <div id="price-history-content">
+          <div class="loading"><span class="spinner"></span> Loading price history...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closePriceHistoryModal()">Close</button>
+        <button type="button" class="btn btn-primary" onclick="exportPriceHistory()">📥 Export CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Open Food Facts Contribution Modal -->
+  <div id="off-contribute-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeContributeModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🌍 Contribute to Open Food Facts</h2>
+        <button class="modal-close" onclick="closeContributeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="contribute-intro">
+          This product isn't in the Open Food Facts database yet. Help the community by adding it!
+        </p>
+        
+        <form id="off-contribute-form">
+          <input type="hidden" id="contribute-barcode">
+          
+          <div class="form-group">
+            <label class="form-label">Barcode</label>
+            <input type="text" class="form-input" id="contribute-barcode-display" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Product Name <span class="required">*</span></label>
+            <input type="text" class="form-input" id="contribute-product-name" required placeholder="e.g., Organic Whole Milk">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Brand</label>
+            <input type="text" class="form-input" id="contribute-brand" placeholder="e.g., Horizon">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Quantity/Size</label>
+            <input type="text" class="form-input" id="contribute-quantity" placeholder="e.g., 1 gallon, 500ml">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Categories</label>
+            <input type="text" class="form-input" id="contribute-categories" placeholder="e.g., Dairy, Milk, Organic">
+            <small class="form-hint">Comma-separated categories</small>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Ingredients</label>
+            <textarea class="form-input" id="contribute-ingredients" rows="3" placeholder="Copy from package..."></textarea>
+          </div>
+          
+          <details class="contribute-nutrition-section">
+            <summary>Nutrition Facts (per 100g)</summary>
+            <div class="nutrition-grid">
+              <div class="form-group">
+                <label class="form-label">Calories (kcal)</label>
+                <input type="number" class="form-input" id="contribute-calories" step="0.1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fat (g)</label>
+                <input type="number" class="form-input" id="contribute-fat" step="0.1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Saturated Fat (g)</label>
+                <input type="number" class="form-input" id="contribute-saturated-fat" step="0.1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Carbohydrates (g)</label>
+                <input type="number" class="form-input" id="contribute-carbs" step="0.1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sugars (g)</label>
+                <input type="number" class="form-input" id="contribute-sugars" step="0.1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fiber (g)</label>
+                <input type="number" class="form-input" id="contribute-fiber" step="0.1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Protein (g)</label>
+                <input type="number" class="form-input" id="contribute-protein" step="0.1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Salt (g)</label>
+                <input type="number" class="form-input" id="contribute-salt" step="0.1">
+              </div>
+            </div>
+          </details>
+          
+          <div id="contribute-status" class="form-message hidden"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeContributeModal()">Cancel</button>
+        <button type="button" class="btn btn-outline" onclick="skipContribution()">Skip & Add Locally</button>
+        <button type="button" class="btn btn-primary" onclick="submitContribution()">
+          🌍 Contribute & Add
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Open Food Facts Settings Modal -->
+  <div id="off-settings-modal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeOffSettingsModal()"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🌍 Open Food Facts Settings</h2>
+        <button class="modal-close" onclick="closeOffSettingsModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="settings-intro">
+          Connect your Open Food Facts account to contribute product data when you scan items not in their database.
+          <a href="https://world.openfoodfacts.org/" target="_blank">Create a free account →</a>
+        </p>
+        
+        <form id="off-settings-form">
+          <div class="form-group">
+            <label class="form-label toggle-label">
+              <input type="checkbox" id="off-enabled">
+              <span>Enable Open Food Facts contributions</span>
+            </label>
+          </div>
+          
+          <div id="off-credentials-section">
+            <div class="form-group">
+              <label class="form-label">Username</label>
+              <input type="text" class="form-input" id="off-username" placeholder="Your Open Food Facts username">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <input type="password" class="form-input" id="off-password" placeholder="Your Open Food Facts password">
+              <small class="form-hint">Stored locally on your server, never shared</small>
+            </div>
+            
+            <button type="button" class="btn btn-secondary" onclick="testOffLogin()">
+              🔑 Test Login
+            </button>
+            <span id="off-login-status"></span>
+            
+            <div class="form-group mt-1">
+              <label class="form-label toggle-label">
+                <input type="checkbox" id="off-auto-contribute">
+                <span>Auto-prompt to contribute when product not found</span>
+              </label>
+            </div>
+          </div>
+          
+          <div id="off-settings-status" class="form-message hidden"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeOffSettingsModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveOffSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    // Pantry state
+    let pantryItems = [];
+    let pantryLocationFilter = 'all';
+    let pantrySearchQuery = '';
+    let autocompleteTimeout = null;
+    
+    // Quick-add and bulk import state
+    let parsedImportItems = [];
+    let quickAddCollapsed = false;
+    let insightsCollapsed = false;
+    
+    // Price history state
+    let currentPriceHistoryData = null;
+
+    // Common staples with sensible defaults
+    const COMMON_STAPLES = [
+      { name: 'Milk', unit: 'gallon', location: 'refrigerator' },
+      { name: 'Eggs', unit: 'piece', location: 'refrigerator', quantity: 12 },
+      { name: 'Bread', unit: 'piece', location: 'pantry' },
+      { name: 'Butter', unit: 'lb', location: 'refrigerator' },
+      { name: 'Cheese', unit: 'lb', location: 'refrigerator' },
+      { name: 'Chicken Breast', unit: 'lb', location: 'refrigerator' },
+      { name: 'Ground Beef', unit: 'lb', location: 'refrigerator' },
+      { name: 'Rice', unit: 'lb', location: 'pantry' },
+      { name: 'Pasta', unit: 'lb', location: 'pantry' },
+      { name: 'Olive Oil', unit: 'bottle', location: 'pantry' },
+      { name: 'Salt', unit: 'piece', location: 'pantry' },
+      { name: 'Pepper', unit: 'piece', location: 'pantry' },
+      { name: 'Onions', unit: 'piece', location: 'pantry', quantity: 3 },
+      { name: 'Garlic', unit: 'piece', location: 'pantry' },
+      { name: 'Tomatoes', unit: 'piece', location: 'refrigerator', quantity: 4 }
+    ];
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPantryItems();
+      loadExpiringItems();
+      loadQuickAddItems();
+      loadShoppingInsights();
+      setupEventListeners();
+      setupBulkImportDragDrop();
+      setDefaultDates();
+    });
+
+    function setDefaultDates() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('purchase-date').value = today;
+    }
+
+    function setupEventListeners() {
+      // Add form
+      document.getElementById('add-pantry-form').addEventListener('submit', handleAddItem);
+      
+      // Edit form
+      document.getElementById('edit-pantry-form').addEventListener('submit', handleEditItem);
+      
+      // Search
+      document.getElementById('pantry-search').addEventListener('input', (e) => {
+        pantrySearchQuery = e.target.value.toLowerCase();
+        renderPantryItems();
+      });
+      
+      // Location filter
+      document.querySelectorAll('.location-filter .filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.location-filter .filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          pantryLocationFilter = btn.dataset.location;
+          renderPantryItems();
+        });
+      });
+      
+      // Autocomplete with smart expiration
+      const ingredientInput = document.getElementById('ingredient-name');
+      ingredientInput.addEventListener('input', handleAutocomplete);
+      ingredientInput.addEventListener('blur', () => {
+        setTimeout(() => {
+          document.getElementById('autocomplete-list').classList.add('hidden');
+        }, 200);
+      });
+      ingredientInput.addEventListener('change', () => {
+        // Suggest expiration date when ingredient name changes
+        suggestExpirationDate();
+      });
+    }
+    
+    // =====================
+    // Smart Expiration Date Functions
+    // =====================
+    
+    async function suggestExpirationDate() {
+      const name = document.getElementById('ingredient-name').value.trim();
+      const location = document.getElementById('location').value;
+      const expirationInput = document.getElementById('expiration-date');
+      const hintEl = document.getElementById('expiration-hint');
+      
+      if (!name) {
+        hintEl.style.display = 'none';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/ingredients/shelf-life/suggest?name=${encodeURIComponent(name)}&location=${encodeURIComponent(location)}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Only auto-fill if expiration is empty
+          if (!expirationInput.value) {
+            expirationInput.value = result.data.date;
+          }
+          
+          // Show hint
+          hintEl.innerHTML = `💡 ${result.data.hint}`;
+          hintEl.style.display = 'flex';
+          
+          // Add warning class for short shelf life items
+          if (result.data.days <= 3) {
+            hintEl.classList.add('warning');
+          } else {
+            hintEl.classList.remove('warning');
+          }
+        }
+      } catch (err) {
+        console.error('Error getting shelf life suggestion:', err);
+        hintEl.style.display = 'none';
+      }
+    }
+    
+    function onLocationChange() {
+      // Re-suggest expiration date when location changes
+      suggestExpirationDate();
+    }
+    
+    // =====================
+    // Shopping Insights Functions
+    // =====================
+    
+    async function loadShoppingInsights() {
+      const section = document.getElementById('insights-section');
+      
+      try {
+        const response = await fetch('/api/ingredients/pantry/insights');
+        const result = await response.json();
+        
+        if (!result.success) {
+          section.style.display = 'none';
+          return;
+        }
+        
+        const data = result.data;
+        
+        // Check if we have enough data to show insights
+        if (data.totalPurchases < 5) {
+          section.style.display = 'none';
+          return;
+        }
+        
+        section.style.display = 'block';
+        
+        // Render restock suggestions
+        const restockEl = document.getElementById('restock-suggestions');
+        if (data.restockSuggestions && data.restockSuggestions.length > 0) {
+          restockEl.innerHTML = data.restockSuggestions.slice(0, 5).map(item => `
+            <li>
+              <span class="item-name">${escapeHtml(item.ingredientName)}</span>
+              <span class="restock-badge">${item.daysSinceLast}d ago</span>
+            </li>
+          `).join('');
+        } else {
+          restockEl.innerHTML = '<li class="empty-insight">You\'re well stocked! 🎉</li>';
+        }
+        
+        // Render shopping patterns
+        const patternsEl = document.getElementById('shopping-patterns');
+        if (data.topBuyers && data.topBuyers.length > 0) {
+          patternsEl.innerHTML = data.topBuyers.slice(0, 5).map(item => `
+            <li>
+              <span class="item-name">${escapeHtml(item.ingredientName)}</span>
+              <span class="item-detail">${item.frequency}</span>
+            </li>
+          `).join('');
+        } else {
+          patternsEl.innerHTML = '<li class="empty-insight">Add more items to see patterns</li>';
+        }
+        
+        // Render running low
+        const runningLowEl = document.getElementById('running-low');
+        if (data.runningLow && data.runningLow.length > 0) {
+          runningLowEl.innerHTML = data.runningLow.slice(0, 5).map(item => `
+            <li>
+              <span class="item-name">${escapeHtml(item.ingredientName)}</span>
+              <span class="item-detail">${item.quantity} ${item.unit || 'left'}</span>
+            </li>
+          `).join('');
+        } else {
+          runningLowEl.innerHTML = '<li class="empty-insight">Nothing running low</li>';
+        }
+        
+      } catch (err) {
+        console.error('Error loading shopping insights:', err);
+        section.style.display = 'none';
+      }
+    }
+    
+    function toggleInsights() {
+      const content = document.getElementById('insights-content');
+      const header = document.querySelector('.insights-header');
+      insightsCollapsed = !insightsCollapsed;
+      
+      content.classList.toggle('collapsed', insightsCollapsed);
+      header.querySelector('.toggle-icon').textContent = insightsCollapsed ? '▶' : '▼';
+    }
+    
+    // =====================
+    // Price History Functions
+    // =====================
+    
+    async function openPriceHistoryModal(ingredientId, ingredientName) {
+      const modal = document.getElementById('price-history-modal');
+      const titleEl = document.getElementById('price-history-ingredient');
+      const contentEl = document.getElementById('price-history-content');
+      
+      modal.classList.remove('hidden');
+      titleEl.textContent = ingredientName || 'Loading...';
+      contentEl.innerHTML = '<div class="loading"><span class="spinner"></span> Loading price history...</div>';
+      
+      try {
+        const response = await fetch(`/api/ingredients/${ingredientId}/price-history`);
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to load price history');
+        }
+        
+        currentPriceHistoryData = result.data;
+        titleEl.textContent = result.data.ingredient;
+        
+        if (!result.data.stats || result.data.history.length === 0) {
+          contentEl.innerHTML = `
+            <div class="empty-insight" style="padding: 2rem; text-align: center;">
+              <p>📊 No price data yet</p>
+              <p style="font-size: 0.9rem; color: var(--text-muted);">
+                Add prices when you buy this item to track costs over time.
+              </p>
+            </div>
+          `;
+          return;
+        }
+        
+        const data = result.data;
+        
+        contentEl.innerHTML = `
+          <div class="price-trend ${data.trend}">
+            ${data.trendIcon} Price trend: <strong>${data.trend}</strong>
+          </div>
+          
+          <div class="price-stats">
+            <div class="price-stat">
+              <span class="stat-label">Average</span>
+              <span class="stat-value">$${data.stats.avgPrice.toFixed(2)}</span>
+            </div>
+            <div class="price-stat">
+              <span class="stat-label">Lowest</span>
+              <span class="stat-value">$${data.stats.minPrice.toFixed(2)}</span>
+            </div>
+            <div class="price-stat">
+              <span class="stat-label">Highest</span>
+              <span class="stat-value">$${data.stats.maxPrice.toFixed(2)}</span>
+            </div>
+          </div>
+          
+          ${data.byStore && data.byStore.length > 0 ? `
+            <div style="margin-bottom: 1rem;">
+              <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: var(--text-muted);">Best Prices by Store</h4>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                ${data.byStore.slice(0, 5).map((s, i) => `
+                  <span style="padding: 0.25rem 0.75rem; background: ${i === 0 ? 'var(--success-bg)' : 'var(--bg-secondary)'}; 
+                        border-radius: 4px; font-size: 0.85rem; 
+                        color: ${i === 0 ? 'var(--success-text)' : 'var(--text-primary)'};">
+                    ${escapeHtml(s.store)}: $${s.avgPrice.toFixed(2)}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          
+          <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: var(--text-muted);">
+            Purchase History (${data.stats.count} records)
+          </h4>
+          <div class="price-history-list">
+            ${data.history.map(p => `
+              <div class="price-history-item">
+                <div class="price-info">
+                  <span class="price-value">$${p.price.toFixed(2)}</span>
+                  <span class="price-detail">
+                    ${p.quantity || 1} ${p.unit || 'unit'}${(p.quantity || 1) !== 1 ? 's' : ''}
+                    ${p.pricePerUnit ? `• $${p.pricePerUnit.toFixed(2)}/unit` : ''}
+                    ${p.store ? `• ${escapeHtml(p.store)}` : ''}
+                  </span>
+                </div>
+                <span class="price-date">${new Date(p.date).toLocaleDateString()}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        
+      } catch (err) {
+        console.error('Error loading price history:', err);
+        contentEl.innerHTML = `
+          <div class="message message-error">
+            Failed to load price history: ${err.message}
+          </div>
+        `;
+      }
+    }
+    
+    function closePriceHistoryModal() {
+      document.getElementById('price-history-modal').classList.add('hidden');
+      currentPriceHistoryData = null;
+    }
+    
+    function exportPriceHistory() {
+      if (!currentPriceHistoryData || !currentPriceHistoryData.history) {
+        pantryShowToast('No data to export', 'error');
+        return;
+      }
+      
+      const data = currentPriceHistoryData;
+      const rows = [
+        ['Date', 'Price', 'Quantity', 'Unit', 'Price/Unit', 'Store'],
+        ...data.history.map(p => [
+          new Date(p.date).toLocaleDateString(),
+          p.price.toFixed(2),
+          p.quantity || 1,
+          p.unit || '',
+          p.pricePerUnit ? p.pricePerUnit.toFixed(2) : '',
+          p.store || ''
+        ])
+      ];
+      
+      const csv = rows.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `price-history-${data.ingredient.replace(/\s+/g, '-').toLowerCase()}.csv`;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+      pantryShowToast('Price history exported!', 'success');
+    }
+
+    async function handleAutocomplete(e) {
+      const query = e.target.value.trim();
+      const list = document.getElementById('autocomplete-list');
+      
+      if (query.length < 2) {
+        list.classList.add('hidden');
+        return;
+      }
+      
+      clearTimeout(autocompleteTimeout);
+      autocompleteTimeout = setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/ingredients?q=${encodeURIComponent(query)}&limit=10`);
+          const ingredients = await response.json();
+          
+          if (ingredients.length === 0) {
+            list.classList.add('hidden');
+            return;
+          }
+          
+          list.innerHTML = ingredients.map(ing => `
+            <div class="autocomplete-item" data-name="${escapeHtml(ing.name)}">
+              <div>${escapeHtml(ing.name)}</div>
+              <div class="item-category">${ing.category || 'Uncategorized'}</div>
+            </div>
+          `).join('');
+          
+          list.querySelectorAll('.autocomplete-item').forEach(item => {
+            item.addEventListener('click', () => {
+              document.getElementById('ingredient-name').value = item.dataset.name;
+              list.classList.add('hidden');
+            });
+          });
+          
+          list.classList.remove('hidden');
+        } catch (err) {
+          console.error('Autocomplete error:', err);
+        }
+      }, 300);
+    }
+
+    async function loadPantryItems() {
+      try {
+        const response = await fetch('/api/ingredients/pantry/items');
+        pantryItems = await response.json();
+        updateStats();
+        renderPantryItems();
+      } catch (err) {
+        console.error('Error loading pantry items:', err);
+        document.getElementById('pantry-items').innerHTML = 
+          '<div class="message message-error">Failed to load pantry items</div>';
+      }
+    }
+
+    async function loadExpiringItems() {
+      try {
+        // Load expiring soon (next 7 days)
+        const expiringResponse = await fetch('/api/ingredients/pantry/expiring?days=7');
+        const expiringItems = await expiringResponse.json();
+        
+        const expiringAlert = document.getElementById('expiring-alert');
+        const expiringList = document.getElementById('expiring-list');
+        
+        if (expiringItems.length > 0) {
+          expiringList.innerHTML = expiringItems.map(item => {
+            const daysLeft = getDaysUntilExpiration(item.expirationDate);
+            return `<li><strong>${escapeHtml(item.ingredientName || item.name)}</strong> - expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}</li>`;
+          }).join('');
+          expiringAlert.classList.remove('hidden');
+        } else {
+          expiringAlert.classList.add('hidden');
+        }
+        
+        // Load expired items
+        const expiredResponse = await fetch('/api/ingredients/pantry/expired');
+        const expiredItems = await expiredResponse.json();
+        
+        const expiredAlert = document.getElementById('expired-alert');
+        const expiredList = document.getElementById('expired-list');
+        
+        if (expiredItems.length > 0) {
+          expiredList.innerHTML = expiredItems.map(item => 
+            `<li><strong>${escapeHtml(item.ingredientName || item.name)}</strong> - expired ${formatDate(item.expirationDate)}</li>`
+          ).join('');
+          expiredAlert.classList.remove('hidden');
+        } else {
+          expiredAlert.classList.add('hidden');
+        }
+      } catch (err) {
+        console.error('Error loading expiring items:', err);
+      }
+    }
+
+    function updateStats() {
+      const counts = {
+        total: pantryItems.length,
+        pantry: 0,
+        refrigerator: 0,
+        freezer: 0
+      };
+      
+      pantryItems.forEach(item => {
+        const location = (item.location || 'pantry').toLowerCase();
+        if (counts[location] !== undefined) {
+          counts[location]++;
+        }
+      });
+      
+      document.getElementById('stat-total').textContent = counts.total;
+      document.getElementById('stat-pantry').textContent = counts.pantry;
+      document.getElementById('stat-refrigerator').textContent = counts.refrigerator;
+      document.getElementById('stat-freezer').textContent = counts.freezer;
+    }
+
+    function renderPantryItems() {
+      const container = document.getElementById('pantry-items');
+      
+      // Filter items
+      let filtered = pantryItems.filter(item => {
+        const matchesFilter = pantryLocationFilter === 'all' || 
+          (item.location || 'pantry').toLowerCase() === pantryLocationFilter;
+        const matchesSearch = !pantrySearchQuery || 
+          (item.ingredientName || item.name || '').toLowerCase().includes(pantrySearchQuery);
+        return matchesFilter && matchesSearch;
+      });
+      
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <p>${pantrySearchQuery || pantryLocationFilter !== 'all' ? 'No items match your filter' : 'Your pantry is empty. Add some items above!'}</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Group by location
+      const groups = {
+        pantry: { icon: '🧊', label: 'Pantry', items: [] },
+        refrigerator: { icon: '❄️', label: 'Refrigerator', items: [] },
+        freezer: { icon: '🥶', label: 'Freezer', items: [] }
+      };
+      
+      filtered.forEach(item => {
+        const location = (item.location || 'pantry').toLowerCase();
+        if (groups[location]) {
+          groups[location].items.push(item);
+        }
+      });
+      
+      // Render groups
+      let html = '';
+      for (const [key, group] of Object.entries(groups)) {
+        if (group.items.length === 0) continue;
+        
+        html += `
+          <div class="location-section" data-location="${key}">
+            <div class="location-header" onclick="toggleSection('${key}')">
+              <h3>${group.icon} ${group.label}</h3>
+              <span class="item-count">${group.items.length} items</span>
+            </div>
+            <div class="location-items" id="section-${key}">
+              ${group.items.map(item => renderPantryItem(item)).join('')}
+            </div>
+          </div>
+        `;
+      }
+      
+      container.innerHTML = html;
+    }
+
+    function renderPantryItem(item) {
+      const expirationStatus = getExpirationStatus(item.expirationDate);
+      const itemClass = expirationStatus === 'expired' ? 'expired' : 
+                        expirationStatus === 'warning' ? 'expiring-soon' : '';
+      
+      const expirationBadge = item.expirationDate ? 
+        `<span class="expiration-badge ${expirationStatus}">${formatExpirationText(item.expirationDate)}</span>` : '';
+      
+      return `
+        <div class="pantry-item ${itemClass}" data-id="${item.id}">
+          <input type="checkbox" onclick="markAsUsed('${item.id}')" title="Mark as used/remove">
+          <div class="item-info">
+            <span class="item-name">${escapeHtml(item.ingredientName || item.name)}</span>
+            <div class="item-details">
+              <span>${item.quantity || 1} ${item.unit || ''}</span>
+              ${expirationBadge}
+              ${item.notes ? `<span>• ${escapeHtml(item.notes)}</span>` : ''}
+            </div>
+          </div>
+          <div class="quantity-controls">
+            <button class="qty-btn" onclick="adjustQuantity('${item.id}', -1)">−</button>
+            <span class="qty-value">${item.quantity || 1}</span>
+            <button class="qty-btn" onclick="adjustQuantity('${item.id}', 1)">+</button>
+          </div>
+          <div class="item-actions">
+            <button class="action-btn" onclick="openPriceHistoryModal('${item.ingredientId}', '${escapeHtml(item.ingredientName || item.name)}')" title="Price History">💰</button>
+            <button class="action-btn" onclick="openEditModal('${item.id}')" title="Edit">✏️</button>
+            <button class="action-btn delete" onclick="deleteItem('${item.id}')" title="Delete">🗑️</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleSection(location) {
+      const section = document.getElementById(`section-${location}`);
+      section.classList.toggle('collapsed');
+    }
+
+    function getExpirationStatus(expirationDate) {
+      if (!expirationDate) return '';
+      const days = getDaysUntilExpiration(expirationDate);
+      if (days < 0) return 'expired';
+      if (days <= 7) return 'warning';
+      return '';
+    }
+
+    function getDaysUntilExpiration(expirationDate) {
+      const exp = new Date(expirationDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      exp.setHours(0, 0, 0, 0);
+      return Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function formatExpirationText(expirationDate) {
+      const days = getDaysUntilExpiration(expirationDate);
+      if (days < 0) return `Expired ${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} ago`;
+      if (days === 0) return 'Expires today';
+      if (days === 1) return 'Expires tomorrow';
+      return `Expires in ${days} days`;
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return '';
+      return new Date(dateString).toLocaleDateString();
+    }
+
+    async function handleAddItem(e) {
+      e.preventDefault();
+      
+      const ingredientName = document.getElementById('ingredient-name').value.trim();
+      const quantity = parseFloat(document.getElementById('quantity').value) || 1;
+      const unit = document.getElementById('unit').value;
+      const location = document.getElementById('location').value;
+      const purchaseDate = document.getElementById('purchase-date').value;
+      const expirationDate = document.getElementById('expiration-date').value;
+      const notes = document.getElementById('notes').value.trim();
+      const pricePaid = parseFloat(document.getElementById('price-paid').value);
+      const store = document.getElementById('store').value.trim();
+      
+      try {
+        const response = await fetch('/api/ingredients/pantry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ingredientName,
+            quantity,
+            unit,
+            location,
+            purchaseDate: purchaseDate || undefined,
+            expirationDate: expirationDate || undefined,
+            notes: notes || undefined
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to add item');
+        }
+        
+        const addedItem = await response.json();
+        
+        // If price was entered, add price record
+        if (pricePaid && pricePaid > 0) {
+          try {
+            await fetch(`/api/ingredients/${addedItem.ingredientId}/price`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                price: pricePaid,
+                quantity: quantity,
+                unit: unit,
+                store: store || undefined,
+                date: purchaseDate || new Date().toISOString()
+              })
+            });
+          } catch (priceErr) {
+            console.error('Error adding price record:', priceErr);
+            // Don't fail the whole operation if price tracking fails
+          }
+        }
+        
+        // Reset form
+        document.getElementById('add-pantry-form').reset();
+        setDefaultDates();
+        document.getElementById('expiration-hint').style.display = 'none';
+        
+        // Reload items
+        await loadPantryItems();
+        await loadExpiringItems();
+        await loadShoppingInsights();
+        
+        pantryShowToast('Item added to pantry!', 'success');
+      } catch (err) {
+        console.error('Error adding item:', err);
+        pantryShowToast(err.message, 'error');
+      }
+    }
+
+    async function adjustQuantity(id, delta) {
+      const item = pantryItems.find(i => i.id === id);
+      if (!item) return;
+      
+      const newQuantity = Math.max(0, (item.quantity || 1) + delta);
+      
+      if (newQuantity === 0) {
+        if (confirm('Remove this item from pantry?')) {
+          await deleteItem(id);
+        }
+        return;
+      }
+      
+      try {
+        await fetch(`/api/ingredients/pantry/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quantity: newQuantity })
+        });
+        
+        item.quantity = newQuantity;
+        renderPantryItems();
+      } catch (err) {
+        console.error('Error adjusting quantity:', err);
+        pantryShowToast('Failed to update quantity', 'error');
+      }
+    }
+
+    async function markAsUsed(id) {
+      if (confirm('Mark this item as used and remove from pantry?')) {
+        await deleteItem(id);
+      }
+    }
+
+    async function deleteItem(id) {
+      try {
+        await fetch(`/api/ingredients/pantry/${id}`, { method: 'DELETE' });
+        
+        pantryItems = pantryItems.filter(i => i.id !== id);
+        updateStats();
+        renderPantryItems();
+        await loadExpiringItems();
+        
+        pantryShowToast('Item removed from pantry', 'success');
+      } catch (err) {
+        console.error('Error deleting item:', err);
+        pantryShowToast('Failed to remove item', 'error');
+      }
+    }
+
+    function openEditModal(id) {
+      const item = pantryItems.find(i => i.id === id);
+      if (!item) return;
+      
+      document.getElementById('edit-id').value = item.id;
+      document.getElementById('edit-name').value = item.ingredientName || item.name;
+      document.getElementById('edit-quantity').value = item.quantity || 1;
+      document.getElementById('edit-unit').value = item.unit || '';
+      document.getElementById('edit-location').value = item.location || 'pantry';
+      document.getElementById('edit-expiration').value = item.expirationDate ? 
+        item.expirationDate.split('T')[0] : '';
+      document.getElementById('edit-notes').value = item.notes || '';
+      
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    async function handleEditItem(e) {
+      e.preventDefault();
+      
+      const id = document.getElementById('edit-id').value;
+      const updates = {
+        quantity: parseFloat(document.getElementById('edit-quantity').value) || 1,
+        unit: document.getElementById('edit-unit').value,
+        location: document.getElementById('edit-location').value,
+        expirationDate: document.getElementById('edit-expiration').value || undefined,
+        notes: document.getElementById('edit-notes').value.trim() || undefined
+      };
+      
+      try {
+        await fetch(`/api/ingredients/pantry/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        
+        closeEditModal();
+        await loadPantryItems();
+        await loadExpiringItems();
+        
+        pantryShowToast('Item updated!', 'success');
+      } catch (err) {
+        console.error('Error updating item:', err);
+        pantryShowToast('Failed to update item', 'error');
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function pantryShowToast(message, type = 'info') {
+      // Use global showToast from app.js if available
+      if (typeof window.showToast === 'function') {
+        window.showToast(message, type);
+        return;
+      }
+      
+      // Fallback toast implementation
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+        background: ${type === 'success' ? 'var(--success-bg)' : type === 'error' ? 'var(--error-bg)' : 'var(--toast-info-bg)'};
+        color: ${type === 'success' ? 'var(--success-text)' : type === 'error' ? 'var(--error-text)' : 'var(--toast-info-text)'};
+        border: 1px solid ${type === 'success' ? 'var(--success-border)' : type === 'error' ? 'var(--error-border)' : 'var(--toast-info-border)'};
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // =====================
+    // Quick-Add Functionality
+    // =====================
+    
+    function toggleQuickAdd() {
+      const content = document.getElementById('quick-add-content');
+      const header = document.querySelector('.quick-add-header');
+      quickAddCollapsed = !quickAddCollapsed;
+      
+      content.classList.toggle('collapsed', quickAddCollapsed);
+      header.classList.toggle('collapsed', quickAddCollapsed);
+    }
+    
+    async function loadQuickAddItems() {
+      await Promise.all([
+        loadFrequentItems(),
+        loadRecentItems(),
+        loadStapleItems()
+      ]);
+    }
+    
+    async function loadFrequentItems() {
+      const container = document.getElementById('frequent-items');
+      const section = document.getElementById('frequent-items-section');
+      
+      try {
+        const response = await fetch('/api/ingredients/pantry/frequent?minCount=3&limit=15');
+        const items = await response.json();
+        
+        if (items.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
+        
+        section.style.display = 'block';
+        container.innerHTML = items.map(item => `
+          <button class="pantry-quick-add-btn" onclick="quickAddItem('${escapeHtml(item.ingredientName)}', '${escapeHtml(item.lastUnit || '')}', '${escapeHtml(item.lastLocation || 'pantry')}')">
+            ${escapeHtml(item.ingredientName)}
+            <span class="item-count">${item.count}×</span>
+          </button>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading frequent items:', err);
+        section.style.display = 'none';
+      }
+    }
+    
+    async function loadRecentItems() {
+      const container = document.getElementById('recent-items');
+      const section = document.getElementById('recent-items-section');
+      
+      try {
+        const response = await fetch('/api/ingredients/pantry/recent?limit=10');
+        const items = await response.json();
+        
+        if (items.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
+        
+        section.style.display = 'block';
+        container.innerHTML = items.map(item => `
+          <button class="pantry-quick-add-btn" onclick="quickAddItem('${escapeHtml(item.ingredientName)}', '${escapeHtml(item.unit || '')}', '${escapeHtml(item.location || 'pantry')}')">
+            ${escapeHtml(item.ingredientName)}
+          </button>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading recent items:', err);
+        section.style.display = 'none';
+      }
+    }
+    
+    function loadStapleItems() {
+      const container = document.getElementById('staple-items');
+      container.innerHTML = COMMON_STAPLES.map(item => `
+        <button class="pantry-quick-add-btn" onclick="quickAddItem('${escapeHtml(item.name)}', '${item.unit}', '${item.location}', ${item.quantity || 1})">
+          ${escapeHtml(item.name)}
+        </button>
+      `).join('');
+    }
+    
+    async function quickAddItem(name, unit, location, quantity = 1) {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Get suggested expiration date
+        let expirationDate = null;
+        try {
+          const expResponse = await fetch(`/api/ingredients/shelf-life/suggest?name=${encodeURIComponent(name)}&location=${encodeURIComponent(location)}`);
+          const expResult = await expResponse.json();
+          if (expResult.success && expResult.data) {
+            expirationDate = expResult.data.date;
+          }
+        } catch (e) {
+          // Ignore expiration suggestion errors
+        }
+        
+        const response = await fetch('/api/ingredients/pantry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ingredientName: name,
+            quantity: quantity,
+            unit: unit || undefined,
+            location: location || 'pantry',
+            purchaseDate: today,
+            expirationDate: expirationDate || undefined
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to add item');
+        }
+        
+        // Reload everything
+        await loadPantryItems();
+        await loadExpiringItems();
+        await loadQuickAddItems();
+        await loadShoppingInsights();
+        
+        pantryShowToast(`Added ${name} to pantry!`, 'success');
+      } catch (err) {
+        console.error('Error quick adding item:', err);
+        pantryShowToast(err.message, 'error');
+      }
+    }
+
+    // =====================
+    // Bulk Import Functionality
+    // =====================
+    
+    function openBulkImportModal() {
+      const modal = document.getElementById('bulk-import-modal');
+      modal.classList.remove('hidden');
+      
+      // Reset state
+      parsedImportItems = [];
+      document.getElementById('import-text').value = '';
+      document.getElementById('csv-file-input').value = '';
+      document.getElementById('import-preview-section').style.display = 'none';
+      document.getElementById('import-result').style.display = 'none';
+      document.getElementById('confirm-import-btn').disabled = true;
+      
+      // Reset tabs
+      switchImportTab('text-import');
+    }
+    
+    function closeBulkImportModal() {
+      document.getElementById('bulk-import-modal').classList.add('hidden');
+      parsedImportItems = [];
+    }
+    
+    function switchImportTab(panelId) {
+      // Update tab buttons
+      document.querySelectorAll('.import-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.panel === panelId);
+      });
+      
+      // Update panels
+      document.querySelectorAll('.import-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === panelId + '-panel');
+      });
+      
+      // Reset preview when switching tabs
+      parsedImportItems = [];
+      document.getElementById('import-preview-section').style.display = 'none';
+      document.getElementById('import-result').style.display = 'none';
+      document.getElementById('confirm-import-btn').disabled = true;
+    }
+    
+    function setupBulkImportDragDrop() {
+      const uploadArea = document.getElementById('csv-upload-area');
+      if (!uploadArea) return;
+      
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+      });
+      
+      uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('drag-over');
+      });
+      
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].name.endsWith('.csv')) {
+          handleCSVFile(files[0]);
+        } else {
+          pantryShowToast('Please upload a CSV file', 'error');
+        }
+      });
+    }
+    
+    function handleCSVUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        handleCSVFile(file);
+      }
+    }
+    
+    async function handleCSVFile(file) {
+      try {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(line => line.trim());
+        
+        if (lines.length < 2) {
+          pantryShowToast('CSV file must have a header row and at least one data row', 'error');
+          return;
+        }
+        
+        // Parse header
+        const header = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+        const nameIdx = header.findIndex(h => h === 'name' || h === 'ingredient' || h === 'item');
+        const qtyIdx = header.findIndex(h => h === 'quantity' || h === 'qty' || h === 'amount');
+        const unitIdx = header.findIndex(h => h === 'unit');
+        const locIdx = header.findIndex(h => h === 'location' || h === 'loc');
+        const expIdx = header.findIndex(h => h === 'expiration' || h === 'exp' || h === 'expires');
+        
+        if (nameIdx === -1) {
+          pantryShowToast('CSV must have a "name" or "ingredient" column', 'error');
+          return;
+        }
+        
+        // Parse data rows
+        parsedImportItems = [];
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCSVLine(lines[i]);
+          const name = values[nameIdx]?.trim();
+          
+          if (!name) continue;
+          
+          parsedImportItems.push({
+            ingredientName: name,
+            quantity: qtyIdx >= 0 ? parseFloat(values[qtyIdx]) || 1 : 1,
+            unit: unitIdx >= 0 ? values[unitIdx]?.trim() || '' : '',
+            location: locIdx >= 0 ? normalizeLocation(values[locIdx]?.trim()) : 'pantry',
+            expirationDate: expIdx >= 0 ? parseDate(values[expIdx]?.trim()) : undefined
+          });
+        }
+        
+        renderImportPreview();
+        pantryShowToast(`Parsed ${parsedImportItems.length} items from CSV`, 'success');
+        
+      } catch (err) {
+        console.error('Error parsing CSV:', err);
+        pantryShowToast('Error parsing CSV file', 'error');
+      }
+    }
+    
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      
+      return result;
+    }
+    
+    function normalizeLocation(loc) {
+      if (!loc) return 'pantry';
+      const lower = loc.toLowerCase();
+      if (lower.includes('fridge') || lower.includes('refrig')) return 'refrigerator';
+      if (lower.includes('freeze')) return 'freezer';
+      if (lower.includes('pantry')) return 'pantry';
+      return 'pantry';
+    }
+    
+    function parseDate(dateStr) {
+      if (!dateStr) return undefined;
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return undefined;
+      return date.toISOString().split('T')[0];
+    }
+    
+    function parseImportItems() {
+      const activePanel = document.querySelector('.import-panel.active');
+      
+      if (activePanel.id === 'text-import-panel') {
+        parseTextImport();
+      }
+      // CSV is parsed on file upload
+      
+      renderImportPreview();
+    }
+    
+    function parseTextImport() {
+      const text = document.getElementById('import-text').value;
+      const lines = text.split(/\r?\n/).filter(line => line.trim());
+      
+      parsedImportItems = [];
+      
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        
+        const parsed = parseIngredientLine(trimmed);
+        parsedImportItems.push(parsed);
+      }
+    }
+    
+    function parseIngredientLine(line) {
+      // Try to parse "quantity unit name" format
+      // Examples: "2 lb chicken breast", "1 gallon milk", "eggs", "3 onions"
+      
+      let quantity = 1;
+      let unit = '';
+      let name = line;
+      
+      // Pattern for mixed fractions: "1 1/2 lb chicken"
+      const mixedMatch = line.match(/^(\d+)\s+(\d+\/\d+)\s+(\w+)?\s*(.+)?$/i);
+      if (mixedMatch) {
+        const whole = parseInt(mixedMatch[1]);
+        const [num, denom] = mixedMatch[2].split('/').map(Number);
+        quantity = whole + (num / denom);
+        const possibleUnit = mixedMatch[3];
+        if (possibleUnit && isUnit(possibleUnit)) {
+          unit = possibleUnit;
+          name = mixedMatch[4] || '';
+        } else {
+          name = ((possibleUnit || '') + ' ' + (mixedMatch[4] || '')).trim();
+        }
+        return { ingredientName: name.trim(), quantity, unit, location: guessLocation(name) };
+      }
+      
+      // Pattern for fractions: "1/2 cup sugar"
+      const fracMatch = line.match(/^(\d+\/\d+)\s+(\w+)?\s*(.+)?$/i);
+      if (fracMatch) {
+        const [num, denom] = fracMatch[1].split('/').map(Number);
+        quantity = num / denom;
+        const possibleUnit = fracMatch[2];
+        if (possibleUnit && isUnit(possibleUnit)) {
+          unit = possibleUnit;
+          name = fracMatch[3] || '';
+        } else {
+          name = ((possibleUnit || '') + ' ' + (fracMatch[3] || '')).trim();
+        }
+        return { ingredientName: name.trim(), quantity, unit, location: guessLocation(name) };
+      }
+      
+      // Pattern for whole/decimal: "2 lb chicken" or "2.5 oz cheese"
+      const numMatch = line.match(/^(\d+(?:\.\d+)?)\s+(\w+)?\s*(.+)?$/i);
+      if (numMatch) {
+        quantity = parseFloat(numMatch[1]);
+        const possibleUnit = numMatch[2];
+        if (possibleUnit && isUnit(possibleUnit)) {
+          unit = possibleUnit;
+          name = numMatch[3] || '';
+        } else {
+          name = ((possibleUnit || '') + ' ' + (numMatch[3] || '')).trim();
+        }
+        return { ingredientName: name.trim(), quantity, unit, location: guessLocation(name) };
+      }
+      
+      // Just a name
+      return { ingredientName: line.trim(), quantity: 1, unit: '', location: guessLocation(line) };
+    }
+    
+    function isUnit(word) {
+      const units = ['lb', 'lbs', 'pound', 'pounds', 'oz', 'ounce', 'ounces', 
+                     'kg', 'kilogram', 'kilograms', 'g', 'gram', 'grams',
+                     'cup', 'cups', 'tbsp', 'tsp', 'tablespoon', 'teaspoon',
+                     'ml', 'l', 'liter', 'liters', 'gallon', 'gallons', 'gal',
+                     'piece', 'pieces', 'can', 'cans', 'bottle', 'bottles',
+                     'bag', 'bags', 'box', 'boxes', 'jar', 'jars', 'bunch', 'bunches',
+                     'head', 'heads', 'clove', 'cloves', 'slice', 'slices',
+                     'package', 'packages', 'pkg'];
+      return units.includes(word.toLowerCase());
+    }
+    
+    function guessLocation(name) {
+      const lower = name.toLowerCase();
+      
+      // Refrigerator items
+      const fridgeKeywords = ['milk', 'cheese', 'yogurt', 'cream', 'butter', 'egg', 
+                              'chicken', 'beef', 'pork', 'fish', 'salmon', 'shrimp',
+                              'lettuce', 'spinach', 'tomato', 'cucumber', 'celery',
+                              'carrot', 'broccoli', 'juice', 'deli', 'bacon', 'sausage'];
+      if (fridgeKeywords.some(kw => lower.includes(kw))) return 'refrigerator';
+      
+      // Freezer items
+      const freezerKeywords = ['frozen', 'ice cream', 'popsicle'];
+      if (freezerKeywords.some(kw => lower.includes(kw))) return 'freezer';
+      
+      return 'pantry';
+    }
+    
+    function renderImportPreview() {
+      const section = document.getElementById('import-preview-section');
+      const list = document.getElementById('import-preview-list');
+      const count = document.getElementById('preview-count');
+      const confirmBtn = document.getElementById('confirm-import-btn');
+      
+      if (parsedImportItems.length === 0) {
+        section.style.display = 'none';
+        confirmBtn.disabled = true;
+        return;
+      }
+      
+      section.style.display = 'block';
+      count.textContent = `${parsedImportItems.length} item${parsedImportItems.length !== 1 ? 's' : ''}`;
+      confirmBtn.disabled = false;
+      
+      list.innerHTML = parsedImportItems.map((item, index) => {
+        const locationIcon = { pantry: '🧊', refrigerator: '❄️', freezer: '🥶' }[item.location] || '📦';
+        return `
+          <div class="preview-item" data-index="${index}">
+            <span>${locationIcon}</span>
+            <span><strong>${escapeHtml(item.ingredientName)}</strong></span>
+            <span style="color:var(--text-muted)">${item.quantity} ${item.unit || 'pc'}</span>
+            ${item.expirationDate ? `<span style="color:var(--text-muted);font-size:0.8rem">exp: ${item.expirationDate}</span>` : ''}
+            <button class="remove-btn" onclick="removeImportItem(${index})" title="Remove">×</button>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function removeImportItem(index) {
+      parsedImportItems.splice(index, 1);
+      renderImportPreview();
+    }
+    
+    async function confirmBulkImport() {
+      if (parsedImportItems.length === 0) {
+        pantryShowToast('No items to import', 'error');
+        return;
+      }
+      
+      const confirmBtn = document.getElementById('confirm-import-btn');
+      const resultEl = document.getElementById('import-result');
+      
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '⏳ Importing...';
+      
+      try {
+        // Add purchase date to all items
+        const today = new Date().toISOString().split('T')[0];
+        const itemsWithDate = parsedImportItems.map(item => ({
+          ...item,
+          purchaseDate: today
+        }));
+        
+        const response = await fetch('/api/ingredients/pantry/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: itemsWithDate })
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Import failed');
+        }
+        
+        // Show result
+        if (result.failed === 0) {
+          resultEl.className = 'import-result success';
+          resultEl.innerHTML = `✅ Successfully added ${result.added} item${result.added !== 1 ? 's' : ''} to pantry!`;
+        } else if (result.added > 0) {
+          resultEl.className = 'import-result partial';
+          resultEl.innerHTML = `⚠️ Added ${result.added} item${result.added !== 1 ? 's' : ''}, ${result.failed} failed.`;
+        } else {
+          resultEl.className = 'import-result error';
+          resultEl.innerHTML = `❌ All ${result.failed} items failed to import.`;
+        }
+        resultEl.style.display = 'block';
+        
+        // Clear preview
+        parsedImportItems = [];
+        document.getElementById('import-preview-section').style.display = 'none';
+        
+        // Reload pantry if any items were added
+        if (result.added > 0) {
+          await loadPantryItems();
+          await loadExpiringItems();
+          await loadQuickAddItems();
+          
+          // Close modal after short delay
+          setTimeout(() => {
+            closeBulkImportModal();
+          }, 2000);
+        }
+        
+      } catch (err) {
+        console.error('Error bulk importing:', err);
+        resultEl.className = 'import-result error';
+        resultEl.innerHTML = `❌ Error: ${err.message}`;
+        resultEl.style.display = 'block';
+      } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '✅ Add All Items';
+      }
+    }
+
+    // =====================
+    // Barcode Scanner Functionality
+    // =====================
+    
+    let html5QrCode = null;
+    let scannedProductData = null;
+    let availableCameras = [];
+    let currentCameraId = null;
+    let useBackFacingMode = false; // For iOS/Safari fallback
+    
+    // Detect iOS/Safari - they have issues with getCameras()
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+    
+    function isSafari() {
+      return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    }
+    
+    async function openBarcodeScanner() {
+      const modal = document.getElementById('barcode-scanner-modal');
+      const statusEl = document.getElementById('scanner-status');
+      const cameraSelectWrapper = document.getElementById('camera-select-wrapper');
+      
+      modal.classList.remove('hidden');
+      statusEl.textContent = 'Initializing camera...';
+      statusEl.className = 'scanner-status';
+      
+      // Reset state
+      scannedProductData = null;
+      document.getElementById('product-preview').classList.add('hidden');
+      document.getElementById('add-scanned-item-btn').classList.add('hidden');
+      document.getElementById('manual-barcode').value = '';
+      
+      // Check for HTTPS (required on iOS except localhost)
+      const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      const isSecure = location.protocol === 'https:' || isLocalhost;
+      
+      if (!isSecure && (isIOS() || isSafari())) {
+        statusEl.textContent = '🔒 Camera requires HTTPS on iOS/Safari. Use manual barcode entry below, or access this site via HTTPS.';
+        statusEl.className = 'scanner-status error';
+        return;
+      }
+      
+      try {
+        // For iOS/Safari, use facingMode directly instead of getCameras()
+        // getCameras() often fails or returns empty on iOS
+        if (isIOS() || isSafari()) {
+          console.log('iOS/Safari detected - using facingMode approach');
+          useBackFacingMode = true;
+          cameraSelectWrapper.classList.add('hidden');
+          await startScannerWithFacingMode('environment');
+        } else {
+          // Standard approach for other browsers
+          useBackFacingMode = false;
+          
+          // Get available cameras
+          availableCameras = await Html5Qrcode.getCameras();
+          
+          if (availableCameras.length === 0) {
+            // Fallback to facingMode if getCameras returns empty
+            console.log('No cameras from getCameras, trying facingMode');
+            useBackFacingMode = true;
+            cameraSelectWrapper.classList.add('hidden');
+            await startScannerWithFacingMode('environment');
+            return;
+          }
+          
+          // Populate camera select dropdown
+          const cameraSelect = document.getElementById('camera-select');
+          cameraSelect.innerHTML = availableCameras.map((camera, index) => 
+            `<option value="${camera.id}">${camera.label || `Camera ${index + 1}`}</option>`
+          ).join('');
+          
+          // Show camera select if multiple cameras available
+          if (availableCameras.length > 1) {
+            cameraSelectWrapper.classList.remove('hidden');
+          } else {
+            cameraSelectWrapper.classList.add('hidden');
+          }
+          
+          // Prefer back camera on mobile
+          const backCamera = availableCameras.find(cam => 
+            cam.label.toLowerCase().includes('back') || 
+            cam.label.toLowerCase().includes('rear') ||
+            cam.label.toLowerCase().includes('environment')
+          );
+          currentCameraId = backCamera ? backCamera.id : availableCameras[0].id;
+          cameraSelect.value = currentCameraId;
+          
+          await startScanner(currentCameraId);
+        }
+        
+      } catch (err) {
+        console.error('Error initializing barcode scanner:', err);
+        
+        // If standard approach fails, try facingMode fallback
+        if (!useBackFacingMode) {
+          console.log('Trying facingMode fallback after error');
+          useBackFacingMode = true;
+          try {
+            await startScannerWithFacingMode('environment');
+            return;
+          } catch (fallbackErr) {
+            console.error('Fallback also failed:', fallbackErr);
+            handleScannerError(fallbackErr);
+            return;
+          }
+        }
+        
+        handleScannerError(err);
+      }
+    }
+    
+    // Scanner config shared between both methods
+    function getScannerConfig() {
+      return {
+        fps: 10,
+        qrbox: { width: 250, height: 150 },
+        aspectRatio: 1.5,
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+          Html5QrcodeSupportedFormats.ITF
+        ]
+      };
+    }
+    
+    // Start scanner using camera ID (standard approach)
+    async function startScanner(cameraId) {
+      const statusEl = document.getElementById('scanner-status');
+      
+      // Stop existing scanner if running
+      if (html5QrCode) {
+        try {
+          if (html5QrCode.isScanning) {
+            await html5QrCode.stop();
+          }
+        } catch (e) {
+          console.log('Error stopping scanner:', e);
+        }
+      }
+      
+      html5QrCode = new Html5Qrcode('barcode-reader');
+      
+      await html5QrCode.start(
+        cameraId,
+        getScannerConfig(),
+        onBarcodeScanned,
+        (errorMessage) => {
+          // Ignore QR code not found errors (happens continuously)
+        }
+      );
+      
+      statusEl.textContent = 'Point camera at a barcode...';
+      statusEl.className = 'scanner-status';
+    }
+    
+    // Start scanner using facingMode (for iOS/Safari)
+    async function startScannerWithFacingMode(facingMode) {
+      const statusEl = document.getElementById('scanner-status');
+      
+      // Stop existing scanner if running
+      if (html5QrCode) {
+        try {
+          if (html5QrCode.isScanning) {
+            await html5QrCode.stop();
+          }
+        } catch (e) {
+          console.log('Error stopping scanner:', e);
+        }
+      }
+      
+      html5QrCode = new Html5Qrcode('barcode-reader');
+      
+      // Use facingMode constraint instead of camera ID
+      // This is more reliable on iOS/Safari
+      await html5QrCode.start(
+        { facingMode: facingMode },
+        getScannerConfig(),
+        onBarcodeScanned,
+        (errorMessage) => {
+          // Ignore QR code not found errors (happens continuously)
+        }
+      );
+      
+      statusEl.textContent = 'Point camera at a barcode...';
+      statusEl.className = 'scanner-status';
+    }
+    
+    async function switchCamera() {
+      const statusEl = document.getElementById('scanner-status');
+      statusEl.textContent = 'Switching camera...';
+      
+      try {
+        if (useBackFacingMode) {
+          // Toggle between front and back camera using facingMode
+          const currentFacing = currentCameraId === 'user' ? 'environment' : 'user';
+          currentCameraId = currentFacing;
+          await startScannerWithFacingMode(currentFacing);
+        } else {
+          // Use camera ID from dropdown
+          const cameraSelect = document.getElementById('camera-select');
+          currentCameraId = cameraSelect.value;
+          await startScanner(currentCameraId);
+        }
+      } catch (err) {
+        handleScannerError(err);
+      }
+    }
+    
+    function handleScannerError(err) {
+      const statusEl = document.getElementById('scanner-status');
+      let message = 'Unable to access camera.';
+      
+      const errMsg = err.message || err.toString();
+      
+      if (err.name === 'NotAllowedError' || errMsg.includes('Permission') || errMsg.includes('denied')) {
+        if (isIOS()) {
+          message = '📵 Camera access denied. On iPad/iPhone: Go to Settings > Safari > Camera and allow access, then reload this page.';
+        } else {
+          message = '📵 Camera access denied. Please allow camera access in your browser settings and reload the page.';
+        }
+      } else if (err.name === 'NotFoundError' || errMsg.includes('No cameras') || errMsg.includes('Requested device not found')) {
+        message = '📵 No camera found. Please use a device with a camera, or use manual barcode entry below.';
+      } else if (err.name === 'NotReadableError' || errMsg.includes('Could not start')) {
+        message = '📵 Camera is in use by another app. Please close other apps using the camera and try again.';
+      } else if (errMsg.includes('NotSupportedError') || errMsg.includes('HTTPS')) {
+        message = '🔒 Camera requires a secure connection (HTTPS). Use manual barcode entry below.';
+      } else {
+        message = `📵 Camera error: ${errMsg}. Try manual barcode entry below.`;
+      }
+      
+      statusEl.textContent = message;
+      statusEl.className = 'scanner-status error';
+    }
+    
+    async function onBarcodeScanned(decodedText, decodedResult) {
+      // Stop scanning temporarily
+      if (html5QrCode && html5QrCode.isScanning) {
+        await html5QrCode.pause();
+      }
+      
+      const statusEl = document.getElementById('scanner-status');
+      statusEl.textContent = `Barcode detected: ${decodedText}. Looking up product...`;
+      statusEl.className = 'scanner-status';
+      
+      // Play a beep sound for feedback
+      playBeep();
+      
+      // Look up the barcode
+      await lookupBarcode(decodedText);
+    }
+    
+    async function lookupManualBarcode() {
+      const barcodeInput = document.getElementById('manual-barcode');
+      const barcode = barcodeInput.value.trim();
+      
+      if (!barcode) {
+        pantryShowToast('Please enter a barcode', 'error');
+        return;
+      }
+      
+      if (!/^\d{8,14}$/.test(barcode)) {
+        pantryShowToast('Barcode should be 8-14 digits', 'error');
+        return;
+      }
+      
+      const statusEl = document.getElementById('scanner-status');
+      statusEl.textContent = `Looking up barcode: ${barcode}...`;
+      statusEl.className = 'scanner-status';
+      
+      await lookupBarcode(barcode);
+    }
+    
+    async function lookupBarcode(barcode) {
+      const statusEl = document.getElementById('scanner-status');
+      const previewEl = document.getElementById('product-preview');
+      const addBtn = document.getElementById('add-scanned-item-btn');
+      
+      try {
+        const response = await fetch(`/api/ingredients/barcode/${barcode}`);
+        const data = await response.json();
+        
+        if (!response.ok || !data.found) {
+          statusEl.innerHTML = `❌ Product not found for barcode: ${barcode}.<br>
+            <button class="btn btn-secondary btn-sm" onclick="openContributeModal('${barcode}')" style="margin-top: 0.5rem;">
+              🌍 Add to Open Food Facts
+            </button>`;
+          statusEl.className = 'scanner-status error';
+          previewEl.classList.add('hidden');
+          addBtn.classList.add('hidden');
+          
+          // Fill just the barcode in manual entry for user reference
+          document.getElementById('manual-barcode').value = barcode;
+          
+          // Check if auto-contribute is enabled
+          checkAutoContribute(barcode);
+          
+          return;
+        }
+        
+        // Store the product data
+        scannedProductData = data;
+        
+        // Show success status
+        statusEl.textContent = '✅ Product found!';
+        statusEl.className = 'scanner-status success';
+        
+        // Display product preview
+        displayProductPreview(data);
+        
+        // Show add button
+        addBtn.classList.remove('hidden');
+        
+      } catch (err) {
+        console.error('Error looking up barcode:', err);
+        statusEl.textContent = `❌ Error looking up barcode: ${err.message}`;
+        statusEl.className = 'scanner-status error';
+        
+        // Resume scanning after a delay
+        setTimeout(resumeScanning, 3000);
+      }
+    }
+    
+    function displayProductPreview(data) {
+      const previewEl = document.getElementById('product-preview');
+      
+      const allergenBadges = data.allergens && data.allergens.length > 0
+        ? `<div class="allergen-badges">
+            ${data.allergens.map(a => `<span class="allergen-badge">⚠️ ${capitalizeFirst(a)}</span>`).join('')}
+           </div>`
+        : '';
+      
+      const categoryIcons = {
+        produce: '🥬',
+        dairy: '🧈',
+        meat: '🥩',
+        bakery: '🍞',
+        pantry: '🥫',
+        spices: '🧂',
+        frozen: '🧊',
+        beverages: '🥤',
+        other: '📦'
+      };
+      
+      previewEl.innerHTML = `
+        <div class="product-header">
+          ${data.thumbnailUrl || data.imageUrl 
+            ? `<img src="${data.thumbnailUrl || data.imageUrl}" alt="${escapeHtml(data.name)}" class="product-image" onerror="this.style.display='none'">`
+            : '<div class="product-image" style="display:flex;align-items:center;justify-content:center;font-size:2rem;">📦</div>'
+          }
+          <div class="product-info">
+            <div class="product-name">${escapeHtml(data.name)}</div>
+            ${data.brand ? `<div class="product-brand">${escapeHtml(data.brand)}</div>` : ''}
+            <span class="product-category">${categoryIcons[data.category] || '📦'} ${capitalizeFirst(data.category)}</span>
+            ${allergenBadges}
+          </div>
+        </div>
+        ${data.quantity ? `<div style="margin-top:0.5rem;font-size:0.9rem;color:var(--text-muted)">Package: ${escapeHtml(data.quantity)}</div>` : ''}
+        ${data.nutrition && data.nutrition.calories ? `<div style="margin-top:0.25rem;font-size:0.9rem;color:var(--text-muted)">Calories: ${data.nutrition.calories} kcal per 100g</div>` : ''}
+      `;
+      
+      previewEl.classList.remove('hidden');
+    }
+    
+    function capitalizeFirst(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    
+    async function resumeScanning() {
+      if (html5QrCode && html5QrCode.getState() === Html5QrcodeScannerState.PAUSED) {
+        try {
+          await html5QrCode.resume();
+          document.getElementById('scanner-status').textContent = 'Point camera at a barcode...';
+          document.getElementById('scanner-status').className = 'scanner-status';
+        } catch (err) {
+          console.error('Error resuming scanner:', err);
+        }
+      }
+    }
+    
+    function addScannedItemToForm() {
+      if (!scannedProductData) {
+        pantryShowToast('No product data available', 'error');
+        return;
+      }
+      
+      // Fill the add form with scanned data
+      const nameInput = document.getElementById('ingredient-name');
+      const quantityInput = document.getElementById('quantity');
+      const unitInput = document.getElementById('unit');
+      const locationInput = document.getElementById('location');
+      
+      // Use product name, with brand if available
+      let productName = scannedProductData.name;
+      if (scannedProductData.brand && !productName.toLowerCase().includes(scannedProductData.brand.toLowerCase())) {
+        productName = `${scannedProductData.brand} ${productName}`;
+      }
+      nameInput.value = productName;
+      
+      // Set quantity to 1
+      quantityInput.value = 1;
+      
+      // Try to determine unit from package quantity
+      if (scannedProductData.quantity) {
+        const qtyMatch = scannedProductData.quantity.match(/(\d+(?:\.\d+)?)\s*(ml|l|g|kg|oz|lb)/i);
+        if (qtyMatch) {
+          const unitMap = {
+            'ml': 'ml',
+            'l': 'L',
+            'g': 'g',
+            'kg': 'kg',
+            'oz': 'oz',
+            'lb': 'lb'
+          };
+          unitInput.value = unitMap[qtyMatch[2].toLowerCase()] || '';
+        }
+      }
+      
+      // Set location based on category
+      const categoryToLocation = {
+        produce: 'refrigerator',
+        dairy: 'refrigerator',
+        meat: 'refrigerator',
+        frozen: 'freezer',
+        bakery: 'pantry',
+        pantry: 'pantry',
+        spices: 'pantry',
+        beverages: 'pantry',
+        other: 'pantry'
+      };
+      locationInput.value = categoryToLocation[scannedProductData.category] || 'pantry';
+      
+      // Close the scanner modal
+      closeBarcodeScanner();
+      
+      // Focus the name input so user can adjust if needed
+      nameInput.focus();
+      
+      pantryShowToast('Product info added to form! Adjust as needed and click Add Item.', 'success');
+    }
+    
+    async function closeBarcodeScanner() {
+      const modal = document.getElementById('barcode-scanner-modal');
+      
+      // Stop the scanner
+      if (html5QrCode) {
+        try {
+          if (html5QrCode.isScanning) {
+            await html5QrCode.stop();
+          }
+        } catch (err) {
+          console.error('Error stopping scanner:', err);
+        }
+        html5QrCode = null;
+      }
+      
+      // Reset state
+      scannedProductData = null;
+      
+      // Hide modal
+      modal.classList.add('hidden');
+      
+      // Clear the reader div
+      document.getElementById('barcode-reader').innerHTML = '';
+    }
+    
+    function playBeep() {
+      // Create a simple beep sound for scan feedback
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 1000;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.3;
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+      } catch (err) {
+        // Audio not supported, ignore
+      }
+    }
+
+    // ============================================
+    // Open Food Facts Contribution Functions
+    // ============================================
+    
+    let offSettings = null;
+    let pendingContributionBarcode = null;
+    
+    // Load OFF settings on page load
+    async function loadOffSettings() {
+      try {
+        const response = await fetch('/api/ingredients/off-settings');
+        offSettings = await response.json();
+      } catch (err) {
+        console.error('Error loading OFF settings:', err);
+        offSettings = { enabled: false };
+      }
+    }
+    
+    // Check if auto-contribute is enabled and prompt
+    async function checkAutoContribute(barcode) {
+      if (!offSettings) await loadOffSettings();
+      
+      if (offSettings.enabled && offSettings.autoContribute) {
+        openContributeModal(barcode);
+      }
+    }
+    
+    // Open the contribute modal
+    function openContributeModal(barcode) {
+      pendingContributionBarcode = barcode;
+      
+      // Set barcode in form
+      document.getElementById('contribute-barcode').value = barcode;
+      document.getElementById('contribute-barcode-display').value = barcode;
+      
+      // Clear other fields
+      document.getElementById('contribute-product-name').value = '';
+      document.getElementById('contribute-brand').value = '';
+      document.getElementById('contribute-quantity').value = '';
+      document.getElementById('contribute-categories').value = '';
+      document.getElementById('contribute-ingredients').value = '';
+      document.getElementById('contribute-calories').value = '';
+      document.getElementById('contribute-fat').value = '';
+      document.getElementById('contribute-saturated-fat').value = '';
+      document.getElementById('contribute-carbs').value = '';
+      document.getElementById('contribute-sugars').value = '';
+      document.getElementById('contribute-fiber').value = '';
+      document.getElementById('contribute-protein').value = '';
+      document.getElementById('contribute-salt').value = '';
+      
+      // Hide status
+      document.getElementById('contribute-status').classList.add('hidden');
+      
+      // Show modal
+      document.getElementById('off-contribute-modal').classList.remove('hidden');
+    }
+    
+    function closeContributeModal() {
+      document.getElementById('off-contribute-modal').classList.add('hidden');
+      pendingContributionBarcode = null;
+      
+      // Resume scanning if scanner was active
+      setTimeout(resumeScanning, 500);
+    }
+    
+    // Skip contribution and just add locally
+    function skipContribution() {
+      closeContributeModal();
+      
+      // Pre-fill the form with the barcode
+      if (pendingContributionBarcode) {
+        document.getElementById('manual-barcode').value = pendingContributionBarcode;
+      }
+      
+      pantryShowToast('You can manually enter the product details', 'info');
+    }
+    
+    // Submit contribution to Open Food Facts
+    async function submitContribution() {
+      const statusEl = document.getElementById('contribute-status');
+      const productName = document.getElementById('contribute-product-name').value.trim();
+      
+      if (!productName) {
+        statusEl.textContent = 'Product name is required';
+        statusEl.className = 'form-message error';
+        statusEl.classList.remove('hidden');
+        return;
+      }
+      
+      // Check if OFF is configured
+      if (!offSettings) await loadOffSettings();
+      
+      if (!offSettings.enabled || !offSettings.hasPassword) {
+        statusEl.innerHTML = 'Please configure your Open Food Facts account first. <button class="btn btn-secondary btn-sm" onclick="openOffSettingsModal()">Open Settings</button>';
+        statusEl.className = 'form-message error';
+        statusEl.classList.remove('hidden');
+        return;
+      }
+      
+      statusEl.textContent = '⏳ Submitting to Open Food Facts (may take up to 15s)...';
+      statusEl.className = 'form-message';
+      statusEl.classList.remove('hidden');
+      
+      try {
+        const contributionData = {
+          barcode: document.getElementById('contribute-barcode').value,
+          productName: productName,
+          brand: document.getElementById('contribute-brand').value.trim() || null,
+          quantity: document.getElementById('contribute-quantity').value.trim() || null,
+          categories: document.getElementById('contribute-categories').value.trim() || null,
+          ingredients: document.getElementById('contribute-ingredients').value.trim() || null,
+          nutrition: {
+            calories: document.getElementById('contribute-calories').value || null,
+            fat: document.getElementById('contribute-fat').value || null,
+            saturatedFat: document.getElementById('contribute-saturated-fat').value || null,
+            carbohydrates: document.getElementById('contribute-carbs').value || null,
+            sugars: document.getElementById('contribute-sugars').value || null,
+            fiber: document.getElementById('contribute-fiber').value || null,
+            protein: document.getElementById('contribute-protein').value || null,
+            salt: document.getElementById('contribute-salt').value || null
+          }
+        };
+        
+        const response = await fetch('/api/ingredients/off-contribute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(contributionData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          statusEl.innerHTML = `✅ ${result.message}<br><a href="${result.productUrl}" target="_blank">View on Open Food Facts →</a>`;
+          statusEl.className = 'form-message success';
+          
+          pantryShowToast('Thank you for contributing! 🌍', 'success');
+          
+          // Close modal after a delay
+          setTimeout(() => {
+            closeContributeModal();
+          }, 2000);
+        } else if (response.status === 504 || result.error === 'Connection timeout') {
+          statusEl.textContent = '⏱️ Server timeout - Open Food Facts may be slow. Your data was not saved. Please try again later.';
+          statusEl.className = 'form-message error';
+        } else {
+          statusEl.textContent = `Error: ${result.message || result.error || result.details || 'Unknown error'}`;
+          statusEl.className = 'form-message error';
+        }
+      } catch (err) {
+        console.error('Error contributing to OFF:', err);
+        statusEl.textContent = `❌ Connection failed - ${err.message}`;
+        statusEl.className = 'form-message error';
+      }
+    }
+    
+    // Open Food Facts Settings Modal
+    function openOffSettingsModal() {
+      loadOffSettingsIntoForm();
+      document.getElementById('off-settings-modal').classList.remove('hidden');
+    }
+    
+    function closeOffSettingsModal() {
+      document.getElementById('off-settings-modal').classList.add('hidden');
+    }
+    
+    async function loadOffSettingsIntoForm() {
+      try {
+        const response = await fetch('/api/ingredients/off-settings');
+        const settings = await response.json();
+        
+        document.getElementById('off-enabled').checked = settings.enabled;
+        document.getElementById('off-username').value = settings.username || '';
+        document.getElementById('off-password').value = '';  // Don't show password
+        document.getElementById('off-auto-contribute').checked = settings.autoContribute;
+        
+        // Show password placeholder if set
+        if (settings.hasPassword) {
+          document.getElementById('off-password').placeholder = '••••••••';
+        }
+        
+        // Update credentials section visibility
+        updateCredentialsSectionVisibility();
+        
+        offSettings = settings;
+      } catch (err) {
+        console.error('Error loading OFF settings:', err);
+      }
+    }
+    
+    function updateCredentialsSectionVisibility() {
+      const enabled = document.getElementById('off-enabled').checked;
+      const section = document.getElementById('off-credentials-section');
+      section.style.opacity = enabled ? '1' : '0.5';
+      section.style.pointerEvents = enabled ? 'auto' : 'none';
+    }
+    
+    // Add event listener for enable checkbox
+    document.addEventListener('DOMContentLoaded', () => {
+      const enabledCheckbox = document.getElementById('off-enabled');
+      if (enabledCheckbox) {
+        enabledCheckbox.addEventListener('change', updateCredentialsSectionVisibility);
+      }
+      
+      // Load OFF settings
+      loadOffSettings();
+    });
+    
+    async function testOffLogin() {
+      const statusEl = document.getElementById('off-login-status');
+      const username = document.getElementById('off-username').value.trim();
+      const password = document.getElementById('off-password').value;
+      
+      if (!username || !password) {
+        statusEl.textContent = '❌ Enter username and password';
+        statusEl.className = 'error';
+        return;
+      }
+      
+      statusEl.textContent = '⏳ Testing connection (may take up to 15s)...';
+      statusEl.className = '';
+      
+      try {
+        const response = await fetch('/api/ingredients/off-test-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          statusEl.textContent = '✅ Login successful!';
+          statusEl.className = 'success';
+        } else if (response.status === 504 || result.error === 'Connection timeout') {
+          statusEl.textContent = '⏱️ Server timeout - Open Food Facts may be slow. Try again later.';
+          statusEl.className = 'error';
+        } else if (result.message) {
+          statusEl.textContent = `❌ ${result.message}`;
+          statusEl.className = 'error';
+        } else {
+          statusEl.textContent = '❌ Invalid credentials';
+          statusEl.className = 'error';
+        }
+      } catch (err) {
+        statusEl.textContent = '❌ Connection failed - check your internet connection';
+        statusEl.className = 'error';
+      }
+    }
+    
+    async function saveOffSettings() {
+      const statusEl = document.getElementById('off-settings-status');
+      
+      const settings = {
+        enabled: document.getElementById('off-enabled').checked,
+        username: document.getElementById('off-username').value.trim(),
+        password: document.getElementById('off-password').value || undefined,
+        autoContribute: document.getElementById('off-auto-contribute').checked
+      };
+      
+      statusEl.textContent = 'Saving...';
+      statusEl.className = 'form-message';
+      statusEl.classList.remove('hidden');
+      
+      try {
+        const response = await fetch('/api/ingredients/off-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          offSettings = result;
+          statusEl.textContent = '✅ Settings saved!';
+          statusEl.className = 'form-message success';
+          
+          setTimeout(() => {
+            closeOffSettingsModal();
+          }, 1000);
+        } else {
+          statusEl.textContent = `Error: ${result.error}`;
+          statusEl.className = 'form-message error';
+        }
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.className = 'form-message error';
+      }
+    }
+  </script>
+</body>
+</html>

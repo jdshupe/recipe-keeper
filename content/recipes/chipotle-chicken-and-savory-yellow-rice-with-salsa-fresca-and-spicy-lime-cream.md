@@ -18,20 +18,104 @@ source: >-
 image: >-
   https://img.hellofresh.com/f_auto,fl_lossy,h_640,q_auto,w_1200/hellofresh_s3/image/chipotle-chicken-and-savory-yellow-rice-4adcb188.jpg
 ingredients:
-  - 1 unit Red Onion
-  - 1 unit Roma Tomato
-  - 1 unit Lime
-  - ¼ ounce Cilantro
-  - 1 unit Chicken Stock Concentrate
-  - 1 teaspoon Turmeric
-  - ¾ cup Jasmine Rice
-  - 10 ounce Chicken Cutlets
-  - 1 teaspoon Chipotle Powder
-  - 2 tablespoon Sour Cream
-  - 2 teaspoon Vegetable Oil
-  - 2 tablespoon Butter
-  - Salt
-  - Pepper
+  - ingredientId: null
+    originalText: 1 unit Red Onion
+    quantity: 1
+    unit: null
+    name: unit Red Onion
+    preparation: null
+    matchConfidence: none
+  - ingredientId: 4aed0454-c0d2-488d-96a0-2b0b8bd12fbe
+    originalText: 1 unit Roma Tomato
+    quantity: 1
+    unit: null
+    name: unit Roma Tomato
+    preparation: null
+    matchConfidence: low
+  - ingredientId: null
+    originalText: 1 unit Lime
+    quantity: 1
+    unit: null
+    name: unit Lime
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: ¼ ounce Cilantro
+    quantity: null
+    unit: null
+    name: ¼ ounce Cilantro
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 1 unit Chicken Stock Concentrate
+    quantity: 1
+    unit: null
+    name: unit Chicken Stock Concentrate
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 1 teaspoon Turmeric
+    quantity: 1
+    unit: tsp
+    name: Turmeric
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: ¾ cup Jasmine Rice
+    quantity: null
+    unit: null
+    name: ¾ cup Jasmine Rice
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 10 ounce Chicken Cutlets
+    quantity: 10
+    unit: oz
+    name: Chicken Cutlets
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 1 teaspoon Chipotle Powder
+    quantity: 1
+    unit: tsp
+    name: Chipotle Powder
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 2 tablespoon Sour Cream
+    quantity: 2
+    unit: tbsp
+    name: Sour Cream
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 2 teaspoon Vegetable Oil
+    quantity: 2
+    unit: tsp
+    name: Vegetable Oil
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: 2 tablespoon Butter
+    quantity: 2
+    unit: tbsp
+    name: Butter
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: Salt
+    quantity: null
+    unit: null
+    name: Salt
+    preparation: null
+    matchConfidence: none
+  - ingredientId: null
+    originalText: Pepper
+    quantity: null
+    unit: null
+    name: Pepper
+    preparation: null
+    matchConfidence: none
 instructions:
   - 'Wash and dry all produce. Halve,'
   - 'peel, and finely dice onion. Dice tomato.'

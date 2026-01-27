@@ -12,20 +12,344 @@
       document.documentElement.classList.add('dark-mode');
     }
   </script>
+  <style>
+    /* Allergen Warning Banner */
+    .allergen-warning-banner {
+      background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+      border: 1px solid #ef9a9a;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .dark-mode .allergen-warning-banner {
+      background: linear-gradient(135deg, #3d1c1c 0%, #4a1c1c 100%);
+      border-color: #c62828;
+    }
+    .allergen-warning-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .allergen-warning-content h4 {
+      margin: 0 0 0.5rem 0;
+      color: #c62828;
+      font-size: 0.95rem;
+    }
+    .dark-mode .allergen-warning-content h4 {
+      color: #ef9a9a;
+    }
+    .allergen-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .allergen-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      background: #ffcdd2;
+      color: #c62828;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .dark-mode .allergen-tag {
+      background: #5c2828;
+      color: #ffcdd2;
+    }
+
+    /* Dietary Badges */
+    .dietary-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-top: 0.25rem;
+    }
+    .dietary-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 500;
+    }
+    .dietary-badge.vegetarian {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .dietary-badge.vegan {
+      background: #e8f5e9;
+      color: #1b5e20;
+    }
+    .dietary-badge.gluten-free {
+      background: #fff3e0;
+      color: #e65100;
+    }
+    .dietary-badge.dairy-free {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+    .dietary-badge.keto {
+      background: #fce4ec;
+      color: #c2185b;
+    }
+    .dark-mode .dietary-badge.vegetarian,
+    .dark-mode .dietary-badge.vegan {
+      background: #1a2e1a;
+      color: #7ee787;
+    }
+    .dark-mode .dietary-badge.gluten-free {
+      background: #3d2a1a;
+      color: #ffb74d;
+    }
+    .dark-mode .dietary-badge.dairy-free {
+      background: #1a3a5c;
+      color: #79c0ff;
+    }
+    .dark-mode .dietary-badge.keto {
+      background: #3d1a2a;
+      color: #f48fb1;
+    }
+
+    /* Enhanced Ingredient Item */
+    .ingredient-item {
+      position: relative;
+    }
+    .ingredient-main {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .ingredient-text {
+      flex: 1;
+      min-width: 150px;
+    }
+    .ingredient-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .category-icon {
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+    .ingredient-allergen-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.15rem;
+      padding: 0.1rem 0.35rem;
+      background: #ffebee;
+      color: #c62828;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      cursor: help;
+    }
+    .dark-mode .ingredient-allergen-indicator {
+      background: #3d1c1c;
+      color: #ef9a9a;
+    }
+
+    /* Substitution Hints */
+    .substitution-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.2rem 0.4rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .substitution-btn:hover {
+      background: var(--accent-primary-light);
+      color: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+    .substitution-popup {
+      display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      z-index: 100;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .substitution-popup.show {
+      display: block;
+    }
+    .substitution-popup h5 {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .substitution-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .substitution-list li {
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.8rem;
+    }
+    .substitution-list li:last-child {
+      border-bottom: none;
+    }
+    .sub-quality {
+      display: inline-block;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      margin-left: 0.3rem;
+    }
+    .sub-quality.great {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .sub-quality.good {
+      background: #fff3e0;
+      color: #e65100;
+    }
+    .sub-quality.okay {
+      background: #fafafa;
+      color: #757575;
+    }
+    .dark-mode .sub-quality.great {
+      background: #1a2e1a;
+      color: #7ee787;
+    }
+    .dark-mode .sub-quality.good {
+      background: #3d2a1a;
+      color: #ffb74d;
+    }
+    .dark-mode .sub-quality.okay {
+      background: #2a2a2a;
+      color: #aaa;
+    }
+    .sub-notes {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+    .sub-ratio {
+      color: var(--text-light);
+      font-size: 0.7rem;
+    }
+    .close-substitutions {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 0.25rem;
+      line-height: 1;
+    }
+    .close-substitutions:hover {
+      color: var(--text-primary);
+    }
+    .no-substitutions {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-style: italic;
+    }
+
+    /* Ingredient hover info tooltip */
+    .ingredient-tooltip {
+      position: absolute;
+      z-index: 1000;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      padding: 0.75rem;
+      max-width: 280px;
+      font-size: 0.8rem;
+      display: none;
+    }
+    .ingredient-tooltip.show {
+      display: block;
+    }
+    .tooltip-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    .tooltip-section {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border-light);
+    }
+    .tooltip-section-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+
+    /* Linked indicator */
+    .linked-indicator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      background: var(--accent-primary-light);
+      color: var(--accent-primary);
+      border-radius: 50%;
+      font-size: 0.6rem;
+      cursor: help;
+      flex-shrink: 0;
+    }
+    .dark-mode .linked-indicator {
+      background: #3d2a1a;
+    }
+  </style>
 </head>
 <body>
   <nav>
     <div class="container">
       <a href="/" class="logo">🍳 Recipe Keeper</a>
+      <button class="hamburger-btn" aria-label="Toggle navigation menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/recipes.html" class="active">Recipes</a>
         <a href="/collections.html">Collections</a>
         <a href="/shopping-lists.html">Shopping Lists</a>
+        <a href="/pantry.html">Pantry</a>
       </div>
       <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
     </div>
   </nav>
+  <div class="mobile-nav-overlay"></div>
 
   <main class="container">
     <a href="/recipes.html" class="back-link">← Back to Recipes</a>
@@ -37,12 +361,503 @@
 
   <script src="/js/app.js"></script>
   <script>
+    // Category icons mapping
+    const CATEGORY_ICONS = {
+      produce: '🥬',
+      dairy: '🧈',
+      meat: '🥩',
+      bakery: '🍞',
+      pantry: '🥫',
+      spices: '🧂',
+      frozen: '🧊',
+      beverages: '🥤',
+      other: '📦'
+    };
+
+    // Allergen icons mapping
+    const ALLERGEN_ICONS = {
+      dairy: '🥛',
+      eggs: '🥚',
+      fish: '🐟',
+      shellfish: '🦐',
+      treeNuts: '🥜',
+      peanuts: '🥜',
+      wheat: '🌾',
+      soy: '🫘',
+      sesame: '🌰'
+    };
+
+    // Allergen display names
+    const ALLERGEN_NAMES = {
+      dairy: 'Dairy',
+      eggs: 'Eggs',
+      fish: 'Fish',
+      shellfish: 'Shellfish',
+      treeNuts: 'Tree Nuts',
+      peanuts: 'Peanuts',
+      wheat: 'Wheat/Gluten',
+      soy: 'Soy',
+      sesame: 'Sesame'
+    };
+
+    // Dietary flag display info
+    const DIETARY_INFO = {
+      vegetarian: { name: 'Vegetarian', icon: '🥬', class: 'vegetarian' },
+      vegan: { name: 'Vegan', icon: '🌱', class: 'vegan' },
+      glutenFree: { name: 'GF', icon: '🌾', class: 'gluten-free' },
+      dairyFree: { name: 'DF', icon: '🥛', class: 'dairy-free' },
+      keto: { name: 'Keto', icon: '🥓', class: 'keto' }
+    };
+
+    // Store current recipe data for reference
+    let currentEnrichedRecipe = null;
+    let substitutionCache = {};
+
     const params = new URLSearchParams(window.location.search);
     const slug = params.get('slug');
+    
     if (slug) {
-      loadRecipe(slug);
+      loadEnrichedRecipe(slug);
     } else {
       document.getElementById('recipe-content').innerHTML = '<div class="message message-error">No recipe specified</div>';
+    }
+
+    /**
+     * Load recipe with enriched ingredient data
+     */
+    async function loadEnrichedRecipe(slug) {
+      const container = document.getElementById('recipe-content');
+      
+      // Try to fetch enriched data first, fall back to regular endpoint
+      let result = await api(`/recipes/${slug}/enriched`);
+      
+      if (!result.success) {
+        // Fall back to regular recipe endpoint
+        result = await api(`/recipes/${slug}`);
+        if (!result.success) {
+          container.innerHTML = `<div class="message message-error">${result.error || 'Recipe not found'}</div>`;
+          return;
+        }
+      }
+      
+      const recipe = result.data;
+      currentEnrichedRecipe = recipe;
+      document.title = `${recipe.title} - Recipe Keeper`;
+      
+      // Track this recipe view
+      trackRecipeView(slug);
+      
+      // Initialize scaling system
+      initScaling(recipe);
+      
+      // Register enriched ingredient renderer for scaling
+      setEnrichedIngredientRenderer(renderEnrichedIngredients);
+      
+      // Load collections for this recipe
+      const collectionsResult = await api(`/collections/for-recipe/${slug}`);
+      const recipeCollections = collectionsResult.success ? collectionsResult.data : [];
+      
+      // Collect all allergens from enriched ingredients
+      const allAllergens = collectAllAllergens(recipe);
+      
+      const image = recipe.image 
+        ? `<img src="${recipe.image}" alt="${recipe.title}">`
+        : '<div style="font-size: 6rem; color: #ccc;">🍽️</div>';
+      
+      container.innerHTML = `
+        <div class="recipe-header">
+          <div class="hero-image">${image}</div>
+          <div class="hero-content">
+            <h1>${recipe.title}</h1>
+            ${recipe.description ? `<p class="text-muted">${recipe.description}</p>` : ''}
+            <div class="recipe-meta">
+              ${recipe.prepTime ? `<div class="meta-item"><div class="label">Prep</div><div class="value">${recipe.prepTime}</div></div>` : ''}
+              ${recipe.cookTime ? `<div class="meta-item"><div class="label">Cook</div><div class="value">${recipe.cookTime}</div></div>` : ''}
+              ${recipe.totalTime ? `<div class="meta-item"><div class="label">Total</div><div class="value">${recipe.totalTime}</div></div>` : ''}
+              ${recipe.servings ? `<div class="meta-item"><div class="label">Servings</div><div class="value">${recipe.servings}</div></div>` : ''}
+            </div>
+            ${recipe.tags && recipe.tags.length > 0 ? `
+              <div class="tags">
+                ${recipe.tags.map(tag => `<span class="tag tag-primary">${tag}</span>`).join('')}
+              </div>
+            ` : ''}
+            ${renderRecipeCollectionsSection(slug, recipeCollections)}
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <div class="card">
+              <div class="card-body">
+                <div class="ingredients-header">
+                  <h2>Ingredients</h2>
+                </div>
+                ${renderAllergenWarningBanner(allAllergens)}
+                ${renderScalingControls()}
+                <ul class="ingredient-list" id="ingredient-list">
+                  ${renderEnrichedIngredients(recipe)}
+                </ul>
+              </div>
+            </div>
+            
+            <!-- Nutrition Panel -->
+            <div class="card mt-2 nutrition-card">
+              <div class="card-body">
+                <button class="nutrition-toggle" onclick="toggleNutritionPanel(this)">
+                  <span class="nutrition-toggle-icon">📊</span>
+                  <span>Nutrition Information</span>
+                  <span class="chevron">▼</span>
+                </button>
+                <div class="nutrition-content hidden" id="nutrition-content">
+                  <div class="nutrition-loading">
+                    <span class="spinner"></span> Calculating nutrition...
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Cost Estimate Panel -->
+            <div class="card mt-2 cost-card">
+              <div class="card-body">
+                <button class="cost-toggle" onclick="toggleCostPanel(this)">
+                  <span class="cost-toggle-icon">💰</span>
+                  <span>Estimated Cost</span>
+                  <span class="chevron">▼</span>
+                </button>
+                <div class="cost-content hidden" id="cost-content">
+                  <div class="cost-loading">
+                    <span class="spinner"></span> Calculating cost...
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-body instructions">
+                <h2>Instructions</h2>
+                <ol>
+                  ${(recipe.instructions || []).map(step => `<li>${step}</li>`).join('')}
+                </ol>
+              </div>
+            </div>
+
+            ${recipe.notes ? `
+              <div class="card mt-2">
+                <div class="card-body">
+                  <h2>Notes</h2>
+                  <p>${recipe.notes}</p>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <div class="rating-notes-section">
+          <div class="card">
+            <div class="card-body">
+              <div class="rating-container">
+                <h3>My Rating</h3>
+                <div class="star-rating" data-slug="${slug}" data-rating="${recipe.rating || 0}">
+                  ${renderStars(recipe.rating || 0, slug)}
+                </div>
+              </div>
+              <div class="notes-container">
+                <h3>My Notes</h3>
+                <textarea id="personal-notes" class="form-input" rows="4" placeholder="Add your personal notes about this recipe...">${recipe.personalNotes || ''}</textarea>
+                <button onclick="savePersonalNotes('${slug}')" class="btn btn-primary btn-small mt-1" id="save-notes-btn">Save Notes</button>
+                <span id="notes-status" class="notes-status"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="actions-bar">
+          <button onclick="startCookMode('${slug}')" class="btn btn-cook-mode">👨‍🍳 Start Cooking</button>
+          <button onclick="showQuickAddDropdown('${slug}', '${recipe.title.replace(/'/g, "\\'")}', event)" class="btn btn-secondary">🛒 Add to Shopping List</button>
+          <button onclick="toggleFavoriteDetail('${slug}')" class="btn ${recipe.favorite ? 'btn-primary' : 'btn-secondary'}" id="favorite-btn">
+            ${recipe.favorite ? '★ Favorited' : '☆ Add to Favorites'}
+          </button>
+          <a href="/edit-recipe.html?slug=${slug}" class="btn btn-secondary">✏️ Edit Recipe</a>
+          <button onclick="window.print()" class="btn btn-secondary print-btn">🖨️ Print Recipe</button>
+          ${recipe.source ? `<a href="${recipe.source}" target="_blank" class="btn btn-secondary">View Original →</a>` : ''}
+          <button onclick="deleteRecipe('${slug}')" class="btn btn-danger">Delete Recipe</button>
+        </div>
+      `;
+      
+      // Close substitution popups when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.substitution-popup') && !e.target.closest('.substitution-btn')) {
+          document.querySelectorAll('.substitution-popup.show').forEach(popup => {
+            popup.classList.remove('show');
+          });
+        }
+      });
+      
+      // Load nutrition data in background
+      loadNutritionData(slug);
+      
+      // Load cost estimate in background
+      loadCostEstimate(slug);
+    }
+
+    /**
+     * Collect all allergens from enriched ingredients
+     */
+    function collectAllAllergens(recipe) {
+      const allergens = new Set();
+      const ingredients = recipe.enrichedIngredients || recipe.ingredients || [];
+      
+      ingredients.forEach(ing => {
+        if (ing && typeof ing === 'object' && ing.allergens && Array.isArray(ing.allergens)) {
+          ing.allergens.forEach(a => allergens.add(a));
+        }
+      });
+      
+      return Array.from(allergens);
+    }
+
+    /**
+     * Render allergen warning banner
+     */
+    function renderAllergenWarningBanner(allergens) {
+      if (!allergens || allergens.length === 0) return '';
+      
+      return `
+        <div class="allergen-warning-banner">
+          <span class="allergen-warning-icon">⚠️</span>
+          <div class="allergen-warning-content">
+            <h4>Allergen Alert</h4>
+            <ul class="allergen-list">
+              ${allergens.map(a => `
+                <li class="allergen-tag">
+                  <span>${ALLERGEN_ICONS[a] || '⚠️'}</span>
+                  <span>${ALLERGEN_NAMES[a] || a}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * Render enriched ingredients with database info
+     */
+    function renderEnrichedIngredients(recipe) {
+      // Use enrichedIngredients if available, otherwise fall back to regular ingredients
+      const ingredients = recipe.enrichedIngredients || recipe.ingredients || [];
+      
+      return ingredients.map((ing, i) => {
+        // Handle plain string ingredients (old format)
+        if (typeof ing === 'string') {
+          return `
+            <li onclick="this.classList.toggle('checked')" class="ingredient-item">
+              <input type="checkbox" id="ing-${i}">
+              <span class="text">${ing}</span>
+            </li>
+          `;
+        }
+        
+        // Handle structured/enriched ingredients
+        const displayText = ing.originalText || formatStructuredIngredient(ing);
+        const isLinked = !!ing.ingredientId;
+        const categoryIcon = ing.category ? CATEGORY_ICONS[ing.category] || '' : '';
+        const hasAllergens = ing.allergens && ing.allergens.length > 0;
+        const hasDietaryFlags = ing.dietaryFlags && Object.values(ing.dietaryFlags).some(v => v);
+        
+        return `
+          <li onclick="handleIngredientClick(event, this)" class="ingredient-item" data-index="${i}">
+            <input type="checkbox" id="ing-${i}">
+            <div class="ingredient-main">
+              <span class="text ingredient-text">${displayText}</span>
+              <div class="ingredient-meta">
+                ${isLinked ? `<span class="linked-indicator" title="Linked to ingredient database">✓</span>` : ''}
+                ${categoryIcon ? `<span class="category-icon" title="${ing.category}">${categoryIcon}</span>` : ''}
+                ${hasAllergens ? renderIngredientAllergenIndicator(ing.allergens) : ''}
+                ${isLinked ? `<button class="substitution-btn" onclick="toggleSubstitutions(event, ${i}, '${ing.name || ing.dbName || ''}')">🔄 Subs</button>` : ''}
+              </div>
+            </div>
+            ${hasDietaryFlags ? renderDietaryBadges(ing.dietaryFlags) : ''}
+            <div class="substitution-popup" id="subs-popup-${i}">
+              <button class="close-substitutions" onclick="closeSubstitutions(event, ${i})">×</button>
+              <h5>Substitutes for ${ing.name || ing.dbName || displayText}</h5>
+              <div class="substitution-content">
+                <span class="spinner"></span> Loading substitutes...
+              </div>
+            </div>
+          </li>
+        `;
+      }).join('');
+    }
+
+    /**
+     * Format a structured ingredient for display
+     */
+    function formatStructuredIngredient(ing) {
+      let text = '';
+      if (ing.quantity) text += ing.quantity + ' ';
+      if (ing.unit) text += ing.unit + ' ';
+      text += ing.name || ing.dbName || 'Unknown ingredient';
+      if (ing.preparation) text += ', ' + ing.preparation;
+      if (ing.notes) text += ' (' + ing.notes + ')';
+      return text.trim();
+    }
+
+    /**
+     * Render allergen indicator for an ingredient
+     */
+    function renderIngredientAllergenIndicator(allergens) {
+      if (!allergens || allergens.length === 0) return '';
+      
+      const icons = allergens.map(a => ALLERGEN_ICONS[a] || '⚠️').join('');
+      const names = allergens.map(a => ALLERGEN_NAMES[a] || a).join(', ');
+      
+      return `<span class="ingredient-allergen-indicator" title="Contains: ${names}">${icons}</span>`;
+    }
+
+    /**
+     * Render dietary badges
+     */
+    function renderDietaryBadges(dietaryFlags) {
+      if (!dietaryFlags) return '';
+      
+      const badges = [];
+      
+      // Only show positive dietary attributes
+      if (dietaryFlags.vegetarian) {
+        badges.push({ ...DIETARY_INFO.vegetarian });
+      }
+      if (dietaryFlags.vegan) {
+        badges.push({ ...DIETARY_INFO.vegan });
+      }
+      if (dietaryFlags.glutenFree) {
+        badges.push({ ...DIETARY_INFO.glutenFree });
+      }
+      if (dietaryFlags.dairyFree) {
+        badges.push({ ...DIETARY_INFO.dairyFree });
+      }
+      if (dietaryFlags.keto) {
+        badges.push({ ...DIETARY_INFO.keto });
+      }
+      
+      if (badges.length === 0) return '';
+      
+      return `
+        <div class="dietary-badges">
+          ${badges.map(b => `
+            <span class="dietary-badge ${b.class}" title="${b.name}">
+              <span>${b.icon}</span>
+              <span>${b.name}</span>
+            </span>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    /**
+     * Handle ingredient click (toggle checked, but not on buttons)
+     */
+    function handleIngredientClick(event, element) {
+      // Don't toggle if clicking on a button or link
+      if (event.target.closest('button') || event.target.closest('a') || event.target.tagName === 'INPUT') {
+        return;
+      }
+      element.classList.toggle('checked');
+    }
+
+    /**
+     * Toggle substitutions popup
+     */
+    async function toggleSubstitutions(event, index, ingredientName) {
+      event.stopPropagation();
+      
+      const popup = document.getElementById(`subs-popup-${index}`);
+      const isShowing = popup.classList.contains('show');
+      
+      // Close all other popups
+      document.querySelectorAll('.substitution-popup.show').forEach(p => {
+        p.classList.remove('show');
+      });
+      
+      if (isShowing) {
+        return; // Was showing, now closed
+      }
+      
+      popup.classList.add('show');
+      
+      // Check cache first
+      if (substitutionCache[ingredientName]) {
+        renderSubstitutions(popup, substitutionCache[ingredientName]);
+        return;
+      }
+      
+      // Fetch substitutions
+      try {
+        const result = await api(`/ingredients/substitute/${encodeURIComponent(ingredientName)}?checkPantry=true`);
+        
+        if (result.success && result.data) {
+          substitutionCache[ingredientName] = result.data;
+          renderSubstitutions(popup, result.data);
+        } else {
+          popup.querySelector('.substitution-content').innerHTML = '<p class="no-substitutions">No substitutes found</p>';
+        }
+      } catch (err) {
+        console.error('Error fetching substitutions:', err);
+        popup.querySelector('.substitution-content').innerHTML = '<p class="no-substitutions">Failed to load substitutes</p>';
+      }
+    }
+
+    /**
+     * Render substitutions in popup
+     */
+    function renderSubstitutions(popup, data) {
+      const content = popup.querySelector('.substitution-content');
+      
+      if (!data.substitutes || data.substitutes.length === 0) {
+        content.innerHTML = '<p class="no-substitutions">No substitutes available for this ingredient</p>';
+        return;
+      }
+      
+      // Show available in pantry first if any
+      const availableInPantry = data.availableInPantry || [];
+      const availableNames = new Set(availableInPantry.map(s => s.substitute));
+      
+      let html = '<ul class="substitution-list">';
+      
+      // Sort to show pantry-available first
+      const sorted = [...data.substitutes].sort((a, b) => {
+        const aAvail = availableNames.has(a.substitute);
+        const bAvail = availableNames.has(b.substitute);
+        if (aAvail && !bAvail) return -1;
+        if (!aAvail && bAvail) return 1;
+        return 0;
+      });
+      
+      sorted.forEach(sub => {
+        const inPantry = availableNames.has(sub.substitute);
+        html += `
+          <li>
+            <strong>${sub.substitute}</strong>
+            ${inPantry ? '<span class="sub-quality great">In Pantry!</span>' : ''}
+            <span class="sub-quality ${sub.quality}">${sub.quality}</span>
+            ${sub.ratio !== 1 ? `<span class="sub-ratio">(use ${sub.ratio}x amount)</span>` : ''}
+            ${sub.notes ? `<span class="sub-notes">${sub.notes}</span>` : ''}
+          </li>
+        `;
+      });
+      
+      html += '</ul>';
+      content.innerHTML = html;
+    }
+
+    /**
+     * Close substitutions popup
+     */
+    function closeSubstitutions(event, index) {
+      event.stopPropagation();
+      document.getElementById(`subs-popup-${index}`).classList.remove('show');
     }
   </script>
 </body>

@@ -1,29 +1,80 @@
 ---
-title: Easy Chicken Enchiladas
 slug: easy-chicken-enchiladas
-source: 'https://www.isabeleats.com/red-chicken-enchiladas/'
-image: >-
-  https://www.isabeleats.com/wp-content/uploads/2020/05/chicken-enchiladas-2020-small-3.jpg
+title: Easy Chicken Enchiladas
 description: >-
   These Easy Chicken Enchiladas make the best Mexican dinner! They&#039;re
   stuffed with shredded chicken and cheese, topped with red enchilada sauce and
   baked.
 prepTime: 10 mins
 cookTime: 20 mins
-totalTime: 30 mins
 servings: '4'
 tags:
   - Main
   - Mexican
+source: 'https://www.isabeleats.com/red-chicken-enchiladas/'
+image: >-
+  https://www.isabeleats.com/wp-content/uploads/2020/05/chicken-enchiladas-2020-small-3.jpg
 ingredients:
-  - 1 ½ cups cooked shredded chicken
-  - '2 cups easy enchilada sauce, (divided)'
-  - 8  corn or flour tortillas ((see note if using flour tortillas))
-  - '2 ½ cups shredded Mexican-blend cheese, (divided)'
-  - 'salt and black pepper, (to taste)'
-  - >-
-    optional toppings: diced onions, chopped cilantro, sour cream, shredded
-    lettuce, cotija cheese
+  - originalText: 1 ½ cups cooked shredded chicken
+    ingredientId: 4ac61bb1-e404-4369-ad0c-3c2139681067
+    matchConfidence: exact
+    quantity: 1
+    unit: null
+    name: ½ cups cooked shredded chicken
+    preparation: null
+    linkedName: Chicken
+  - originalText: '2 cups easy enchilada sauce, (divided)'
+    ingredientId: null
+    matchConfidence: none
+    quantity: 2
+    unit: cup
+    name: easy enchilada sauce
+    preparation: divided
+    linkedName: null
+  - originalText: 8  corn or flour tortillas ((see note if using flour tortillas))
+    ingredientId: null
+    matchConfidence: none
+    quantity: 8
+    unit: null
+    name: corn or flour tortillas ((see note if using flour tortillas))
+    preparation: null
+    linkedName: null
+  - originalText: '2 ½ cups shredded Mexican-blend cheese, (divided)'
+    ingredientId: null
+    matchConfidence: none
+    quantity: 2
+    unit: null
+    name: ½ cups shredded Mexican-blend cheese
+    preparation: divided
+    linkedName: null
+  - originalText: 'salt and black pepper, (to taste)'
+    ingredientId: null
+    matchConfidence: none
+    quantity: null
+    unit: null
+    name: salt and black pepper
+    preparation: to taste
+    linkedName: null
+  - originalText: >-
+      optional toppings: diced onions, chopped cilantro, sour cream, shredded
+      lettuce, cotija cheese
+    ingredientId: null
+    matchConfidence: none
+    quantity: null
+    unit: null
+    name: >-
+      optional toppings: diced onions cilantro, sour cream lettuce, cotija
+      cheese
+    preparation: chopped
+    linkedName: null
+  - originalText: 2 Eggs
+    ingredientId: 9108086a-40d9-4cb5-ad8c-0a98e142d7bc
+    matchConfidence: exact
+    quantity: null
+    unit: null
+    name: null
+    preparation: null
+    linkedName: Eggs
 instructions:
   - "Preheat oven to\_350ºF. In a large bowl, combine the shredded chicken, ¼ cup enchilada sauce and a generous pinch of salt and pepper. Mix together and taste. Season with more salt and pepper as needed."
   - >-
@@ -41,6 +92,9 @@ instructions:
     remaining 1 ½ cups shredded cheese, and bake for 20 minutes until the cheese
     is melted and bubbly.
   - Serve immediately and garnish with desired toppings.
+favorite: true
+rating: 0
+personalNotes: ''
 dateAdded: '2026-01-08T17:42:41.738Z'
 ---
 

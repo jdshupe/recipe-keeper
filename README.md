@@ -32,6 +32,16 @@ A personal recipe management web app for storing, organizing, and cooking from y
 - **Category Sorting** - Items grouped by store aisle (Produce, Dairy, Meat, etc.)
 - **Custom Items** - Add non-recipe items like paper towels
 - **Progress Tracking** - Check off items as you shop
+- **Quick Add** - 🛒 button on recipe cards for one-click ingredient adding
+
+### Quality of Life (v1.1.0)
+- **Dark Mode** - System-wide dark theme with toggle, respects system preference
+- **Toast Notifications** - Non-blocking success/error feedback
+- **Recently Viewed** - Last 5 viewed recipes shown on home page
+- **Keyboard Shortcuts** - Press `?` to see all navigation shortcuts
+- **Duplicate Detection** - Warning when importing similar recipes
+- **Image Upload** - Upload photos directly instead of only URLs
+- **Improved Home Page** - Stats, suggestions, and quick actions
 
 ## Tech Stack
 
@@ -197,6 +207,12 @@ dateAdded: 2026-01-08T12:00:00.000Z
 |--------|----------|-------------|
 | POST | /api/scrape | Extract recipe from URL |
 
+### Upload
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/upload | Upload recipe image (multipart/form-data) |
+| DELETE | /api/upload/:filename | Delete uploaded image |
+
 ### Shopping Lists
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -222,6 +238,17 @@ dateAdded: 2026-01-08T12:00:00.000Z
 
 ## Keyboard Shortcuts
 
+### Global Navigation
+| Key | Action |
+|-----|--------|
+| ? | Show shortcuts help |
+| H | Go to Home |
+| R | Go to Recipes |
+| C | Go to Collections |
+| S | Go to Shopping Lists |
+| A | Add new recipe |
+| / | Focus search box |
+
 ### Cook Mode
 | Key | Action |
 |-----|--------|
@@ -240,6 +267,16 @@ dateAdded: 2026-01-08T12:00:00.000Z
 MIT License - feel free to use, modify, and share.
 
 ## Version History
+
+### v1.1.0 (2026-01-26)
+- Dark mode with system preference detection
+- Toast notifications replacing alerts
+- Recently viewed recipes on home page
+- Quick add to shopping list from recipe cards
+- Global keyboard shortcuts
+- Duplicate recipe detection on import/add
+- Recipe image upload (drag & drop)
+- Improved home page with stats and suggestions
 
 ### v1.0.0 (2026-01-08)
 - Initial release with all Phase 1-4 features
