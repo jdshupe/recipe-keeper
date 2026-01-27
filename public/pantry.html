@@ -3864,7 +3864,7 @@ olive oil"></textarea>
         return;
       }
       
-      statusEl.textContent = 'Submitting to Open Food Facts...';
+      statusEl.textContent = '⏳ Submitting to Open Food Facts (may take up to 15s)...';
       statusEl.className = 'form-message';
       statusEl.classList.remove('hidden');
       
@@ -3906,13 +3906,16 @@ olive oil"></textarea>
           setTimeout(() => {
             closeContributeModal();
           }, 2000);
+        } else if (response.status === 504 || result.error === 'Connection timeout') {
+          statusEl.textContent = '⏱️ Server timeout - Open Food Facts may be slow. Your data was not saved. Please try again later.';
+          statusEl.className = 'form-message error';
         } else {
-          statusEl.textContent = `Error: ${result.error || result.details || 'Unknown error'}`;
+          statusEl.textContent = `Error: ${result.message || result.error || result.details || 'Unknown error'}`;
           statusEl.className = 'form-message error';
         }
       } catch (err) {
         console.error('Error contributing to OFF:', err);
-        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.textContent = `❌ Connection failed - ${err.message}`;
         statusEl.className = 'form-message error';
       }
     }
@@ -3980,7 +3983,7 @@ olive oil"></textarea>
         return;
       }
       
-      statusEl.textContent = '⏳ Testing...';
+      statusEl.textContent = '⏳ Testing connection (may take up to 15s)...';
       statusEl.className = '';
       
       try {
@@ -3995,12 +3998,18 @@ olive oil"></textarea>
         if (result.success) {
           statusEl.textContent = '✅ Login successful!';
           statusEl.className = 'success';
+        } else if (response.status === 504 || result.error === 'Connection timeout') {
+          statusEl.textContent = '⏱️ Server timeout - Open Food Facts may be slow. Try again later.';
+          statusEl.className = 'error';
+        } else if (result.message) {
+          statusEl.textContent = `❌ ${result.message}`;
+          statusEl.className = 'error';
         } else {
           statusEl.textContent = '❌ Invalid credentials';
           statusEl.className = 'error';
         }
       } catch (err) {
-        statusEl.textContent = '❌ Error testing login';
+        statusEl.textContent = '❌ Connection failed - check your internet connection';
         statusEl.className = 'error';
       }
     }

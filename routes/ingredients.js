@@ -253,29 +253,51 @@ router.post('/off-test-login', async (req, res) => {
     }
     
     // Test by getting user info via a simple authenticated request
-    const response = await fetch('https://world.openfoodfacts.org/cgi/auth.pl', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'RecipeKeeper/1.4.0 (https://github.com/jdshupe/recipe-keeper)'
-      },
-      body: new URLSearchParams({
-        user_id: username,
-        password: password
-      })
-    });
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
     
-    const text = await response.text();
-    
-    // If login successful, response contains user info
-    if (text.includes('user_id') || response.ok) {
-      res.json({ success: true, message: 'Login successful' });
-    } else {
-      res.status(401).json({ success: false, error: 'Invalid credentials' });
+    try {
+      const response = await fetch('https://world.openfoodfacts.org/cgi/auth.pl', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'RecipeKeeper/1.4.0 (https://github.com/jdshupe/recipe-keeper)'
+        },
+        body: new URLSearchParams({
+          user_id: username,
+          password: password
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeout);
+      
+      const text = await response.text();
+      
+      // If login successful, response contains user info
+      if (text.includes('user_id') || response.ok) {
+        res.json({ success: true, message: 'Login successful' });
+      } else {
+        res.status(401).json({ success: false, error: 'Invalid credentials' });
+      }
+    } catch (fetchErr) {
+      clearTimeout(timeout);
+      if (fetchErr.name === 'AbortError') {
+        return res.status(504).json({ 
+          success: false, 
+          error: 'Connection timeout', 
+          message: 'Open Food Facts server is slow or unreachable. Please try again later.'
+        });
+      }
+      throw fetchErr;
     }
   } catch (err) {
     console.error('Error testing OFF login:', err);
-    res.status(500).json({ error: 'Failed to test login' });
+    res.status(500).json({ 
+      error: 'Failed to test login', 
+      message: err.message || 'Connection to Open Food Facts failed. Please try again later.'
+    });
   }
 });
 
@@ -348,30 +370,49 @@ router.post('/off-contribute', async (req, res) => {
       if (nutrition.salt) formData.append('nutriment_salt_100g', nutrition.salt);
     }
     
-    // Submit to Open Food Facts
-    const response = await fetch('https://world.openfoodfacts.org/cgi/product_jqm2.pl', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'RecipeKeeper/1.4.0 (https://github.com/jdshupe/recipe-keeper)'
-      },
-      body: formData
-    });
+    // Submit to Open Food Facts with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
     
-    const result = await response.json();
-    
-    if (result.status === 1 || result.status_verbose === 'fields saved') {
-      res.json({
-        success: true,
-        message: 'Product contributed to Open Food Facts! Thank you for helping build the open food database.',
-        productUrl: `https://world.openfoodfacts.org/product/${barcode}`
+    try {
+      const response = await fetch('https://world.openfoodfacts.org/cgi/product_jqm2.pl', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'RecipeKeeper/1.4.0 (https://github.com/jdshupe/recipe-keeper)'
+        },
+        body: formData,
+        signal: controller.signal
       });
-    } else {
-      res.status(400).json({
-        success: false,
-        error: 'Failed to contribute product',
-        details: result.status_verbose || result.error || 'Unknown error'
-      });
+      
+      clearTimeout(timeoutId);
+      
+      const result = await response.json();
+      
+      if (result.status === 1 || result.status_verbose === 'fields saved') {
+        res.json({
+          success: true,
+          message: 'Product contributed to Open Food Facts! Thank you for helping build the open food database.',
+          productUrl: `https://world.openfoodfacts.org/product/${barcode}`
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          error: 'Failed to contribute product',
+          details: result.status_verbose || result.error || 'Unknown error'
+        });
+      }
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      if (fetchErr.name === 'AbortError') {
+        console.error('OFF contribute timeout:', fetchErr);
+        return res.status(504).json({
+          success: false,
+          error: 'Connection timeout',
+          message: 'Open Food Facts server is slow or unreachable. Please try again later.'
+        });
+      }
+      throw fetchErr; // Re-throw other errors to be caught by outer catch
     }
   } catch (err) {
     console.error('Error contributing to OFF:', err);
