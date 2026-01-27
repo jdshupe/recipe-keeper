@@ -24,6 +24,6 @@ build/
 
 # Keep content directories but ignore recipe/list data for privacy
 # Uncomment these if you don't want to track your recipes:
-# content/recipes/
-# content/shopping-lists/
-# content/collections/
+content/recipes/
+content/shopping-lists/
+content/collections/
