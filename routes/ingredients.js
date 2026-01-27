@@ -183,6 +183,11 @@ function loadSettings() {
  * Save settings to file
  */
 function saveSettings(settings) {
+  const { CONTENT_DIR } = require('../lib/config');
+  // Ensure content directory exists
+  if (!fs.existsSync(CONTENT_DIR)) {
+    fs.mkdirSync(CONTENT_DIR, { recursive: true });
+  }
   fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
 }
 
@@ -207,6 +212,8 @@ router.get('/off-settings', (req, res) => {
 router.post('/off-settings', (req, res) => {
   try {
     const { enabled, username, password, autoContribute } = req.body;
+    console.log('Saving OFF settings for user:', username);
+    
     const settings = loadSettings();
     
     settings.openFoodFacts = {
@@ -217,6 +224,7 @@ router.post('/off-settings', (req, res) => {
     };
     
     saveSettings(settings);
+    console.log('OFF settings saved successfully');
     
     res.json({
       success: true,
@@ -227,7 +235,7 @@ router.post('/off-settings', (req, res) => {
     });
   } catch (err) {
     console.error('Error saving OFF settings:', err);
-    res.status(500).json({ error: 'Failed to save settings' });
+    res.status(500).json({ error: 'Failed to save settings', details: err.message });
   }
 });
 
