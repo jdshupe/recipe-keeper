@@ -22,9 +22,10 @@ npm-debug.log*
 dist/
 build/
 
-# User data files (pantry, ingredients database)
+# User data files (pantry, ingredients database, settings)
 content/ingredients/pantry.json
 content/ingredients/ingredients.json
+content/settings.json
 
 # Keep content directories but ignore recipe/list data for privacy
 # Uncomment these if you don't want to track your recipes:

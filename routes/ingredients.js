@@ -151,6 +151,299 @@ router.post('/substitutes/bulk', async (req, res) => {
   }
 });
 
+// ============================================
+// Open Food Facts Contribution API
+// (Must be before /:id route to avoid conflicts)
+// ============================================
+
+const { SETTINGS_FILE } = require('../lib/config');
+
+/**
+ * Load settings from file
+ */
+function loadSettings() {
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+    }
+  } catch (err) {
+    console.error('Error loading settings:', err);
+  }
+  return {
+    openFoodFacts: {
+      enabled: false,
+      username: null,
+      password: null,
+      autoContribute: false
+    }
+  };
+}
+
+/**
+ * Save settings to file
+ */
+function saveSettings(settings) {
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+}
+
+/**
+ * GET /api/ingredients/off-settings
+ * Get Open Food Facts contribution settings (without password)
+ */
+router.get('/off-settings', (req, res) => {
+  const settings = loadSettings();
+  res.json({
+    enabled: settings.openFoodFacts?.enabled || false,
+    username: settings.openFoodFacts?.username || null,
+    hasPassword: !!settings.openFoodFacts?.password,
+    autoContribute: settings.openFoodFacts?.autoContribute || false
+  });
+});
+
+/**
+ * POST /api/ingredients/off-settings
+ * Save Open Food Facts contribution settings
+ */
+router.post('/off-settings', (req, res) => {
+  try {
+    const { enabled, username, password, autoContribute } = req.body;
+    const settings = loadSettings();
+    
+    settings.openFoodFacts = {
+      enabled: !!enabled,
+      username: username || null,
+      password: password || settings.openFoodFacts?.password || null,
+      autoContribute: !!autoContribute
+    };
+    
+    saveSettings(settings);
+    
+    res.json({
+      success: true,
+      enabled: settings.openFoodFacts.enabled,
+      username: settings.openFoodFacts.username,
+      hasPassword: !!settings.openFoodFacts.password,
+      autoContribute: settings.openFoodFacts.autoContribute
+    });
+  } catch (err) {
+    console.error('Error saving OFF settings:', err);
+    res.status(500).json({ error: 'Failed to save settings' });
+  }
+});
+
+/**
+ * POST /api/ingredients/off-test-login
+ * Test Open Food Facts credentials
+ */
+router.post('/off-test-login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password required' });
+    }
+    
+    // Test by getting user info via a simple authenticated request
+    const response = await fetch('https://world.openfoodfacts.org/cgi/auth.pl', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'RecipeKeeper/1.4.0 (https://github.com/jdshupe/recipe-keeper)'
+      },
+      body: new URLSearchParams({
+        user_id: username,
+        password: password
+      })
+    });
+    
+    const text = await response.text();
+    
+    // If login successful, response contains user info
+    if (text.includes('user_id') || response.ok) {
+      res.json({ success: true, message: 'Login successful' });
+    } else {
+      res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+  } catch (err) {
+    console.error('Error testing OFF login:', err);
+    res.status(500).json({ error: 'Failed to test login' });
+  }
+});
+
+/**
+ * POST /api/ingredients/off-contribute
+ * Contribute product data to Open Food Facts
+ */
+router.post('/off-contribute', async (req, res) => {
+  try {
+    const settings = loadSettings();
+    
+    if (!settings.openFoodFacts?.enabled || !settings.openFoodFacts?.username || !settings.openFoodFacts?.password) {
+      return res.status(400).json({ 
+        error: 'Open Food Facts contribution not configured',
+        message: 'Please configure your Open Food Facts account in settings first.'
+      });
+    }
+    
+    const {
+      barcode,
+      productName,
+      brand,
+      quantity,
+      categories,
+      ingredients,
+      labels,
+      stores,
+      origins,
+      nutrition
+    } = req.body;
+    
+    if (!barcode || !productName) {
+      return res.status(400).json({ error: 'Barcode and product name are required' });
+    }
+    
+    // Build the form data for Open Food Facts
+    const formData = new URLSearchParams();
+    
+    // Authentication
+    formData.append('user_id', settings.openFoodFacts.username);
+    formData.append('password', settings.openFoodFacts.password);
+    
+    // App identification
+    formData.append('app_name', 'RecipeKeeper');
+    formData.append('app_version', '1.4.0');
+    formData.append('comment', 'Contributed via Recipe Keeper app');
+    
+    // Product data
+    formData.append('code', barcode);
+    formData.append('product_name', productName);
+    
+    if (brand) formData.append('brands', brand);
+    if (quantity) formData.append('quantity', quantity);
+    if (categories) formData.append('categories', categories);
+    if (ingredients) formData.append('ingredients_text', ingredients);
+    if (labels) formData.append('labels', labels);
+    if (stores) formData.append('stores', stores);
+    if (origins) formData.append('origins', origins);
+    
+    // Nutrition data (per 100g)
+    if (nutrition) {
+      if (nutrition.calories) formData.append('nutriment_energy-kcal_100g', nutrition.calories);
+      if (nutrition.fat) formData.append('nutriment_fat_100g', nutrition.fat);
+      if (nutrition.saturatedFat) formData.append('nutriment_saturated-fat_100g', nutrition.saturatedFat);
+      if (nutrition.carbohydrates) formData.append('nutriment_carbohydrates_100g', nutrition.carbohydrates);
+      if (nutrition.sugars) formData.append('nutriment_sugars_100g', nutrition.sugars);
+      if (nutrition.fiber) formData.append('nutriment_fiber_100g', nutrition.fiber);
+      if (nutrition.protein) formData.append('nutriment_proteins_100g', nutrition.protein);
+      if (nutrition.sodium) formData.append('nutriment_sodium_100g', nutrition.sodium);
+      if (nutrition.salt) formData.append('nutriment_salt_100g', nutrition.salt);
+    }
+    
+    // Submit to Open Food Facts
+    const response = await fetch('https://world.openfoodfacts.org/cgi/product_jqm2.pl', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'RecipeKeeper/1.4.0 (https://github.com/jdshupe/recipe-keeper)'
+      },
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (result.status === 1 || result.status_verbose === 'fields saved') {
+      res.json({
+        success: true,
+        message: 'Product contributed to Open Food Facts! Thank you for helping build the open food database.',
+        productUrl: `https://world.openfoodfacts.org/product/${barcode}`
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'Failed to contribute product',
+        details: result.status_verbose || result.error || 'Unknown error'
+      });
+    }
+  } catch (err) {
+    console.error('Error contributing to OFF:', err);
+    res.status(500).json({ 
+      error: 'Failed to contribute to Open Food Facts',
+      message: err.message
+    });
+  }
+});
+
+/**
+ * POST /api/ingredients/off-upload-image
+ * Upload a product image to Open Food Facts
+ */
+router.post('/off-upload-image', async (req, res) => {
+  try {
+    const settings = loadSettings();
+    
+    if (!settings.openFoodFacts?.enabled || !settings.openFoodFacts?.username || !settings.openFoodFacts?.password) {
+      return res.status(400).json({ error: 'Open Food Facts contribution not configured' });
+    }
+    
+    const { barcode, imageType, imageData } = req.body;
+    
+    if (!barcode || !imageType || !imageData) {
+      return res.status(400).json({ error: 'Barcode, image type, and image data are required' });
+    }
+    
+    // Valid image types: front, ingredients, nutrition, packaging
+    const validTypes = ['front', 'ingredients', 'nutrition', 'packaging'];
+    if (!validTypes.includes(imageType)) {
+      return res.status(400).json({ error: `Image type must be one of: ${validTypes.join(', ')}` });
+    }
+    
+    // Convert base64 to buffer
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    // Create form data for image upload
+    const FormData = require('form-data');
+    const formData = new FormData();
+    
+    formData.append('user_id', settings.openFoodFacts.username);
+    formData.append('password', settings.openFoodFacts.password);
+    formData.append('code', barcode);
+    formData.append('imagefield', `${imageType}_en`);
+    formData.append(`imgupload_${imageType}_en`, imageBuffer, {
+      filename: `${barcode}_${imageType}.jpg`,
+      contentType: 'image/jpeg'
+    });
+    
+    const response = await fetch('https://world.openfoodfacts.org/cgi/product_image_upload.pl', {
+      method: 'POST',
+      headers: {
+        'User-Agent': 'RecipeKeeper/1.4.0 (https://github.com/jdshupe/recipe-keeper)',
+        ...formData.getHeaders()
+      },
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (result.status === 'status ok') {
+      res.json({
+        success: true,
+        message: `${imageType} image uploaded successfully!`,
+        imageUrl: result.image?.display_url || null
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'Failed to upload image',
+        details: result.error || 'Unknown error'
+      });
+    }
+  } catch (err) {
+    console.error('Error uploading image to OFF:', err);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
 /**
  * GET /api/ingredients/:id
  * Get ingredient by ID
