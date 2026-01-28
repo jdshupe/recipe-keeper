@@ -1,6 +1,6 @@
 # 🍳 Recipe Keeper
 
-A personal recipe management web app for storing, organizing, and cooking from your digital recipe collection.
+A personal recipe management web app for storing, organizing, and cooking from your digital recipe collection. Built for home cooks who want full control of their recipes with pantry tracking, smart shopping lists, and meal planning features.
 
 ## Features
 
@@ -27,28 +27,50 @@ A personal recipe management web app for storing, organizing, and cooking from y
 - **Print View** - Clean, printer-friendly recipe format
 - **Notes & Ratings** - Add personal notes and 1-5 star ratings
 
-### Shopping Lists
-- **Combine Duplicates** - Same ingredients from multiple recipes are combined
-- **Category Sorting** - Items grouped by store aisle (Produce, Dairy, Meat, etc.)
-- **Custom Items** - Add non-recipe items like paper towels
-- **Progress Tracking** - Check off items as you shop
-- **Quick Add** - 🛒 button on recipe cards for one-click ingredient adding
+### Pantry Management (v1.2.0+)
+- **Ingredient Database** - Structured ingredients with categories, allergens, dietary flags
+- **Pantry Tracking** - Track what's in stock with quantities and locations
+- **Expiration Alerts** - Get notified when items are expiring soon
+- **"What Can I Make?"** - Recipe suggestions based on your pantry contents
 
-### Quality of Life (v1.1.0)
-- **Dark Mode** - System-wide dark theme with toggle, respects system preference
-- **Toast Notifications** - Non-blocking success/error feedback
-- **Recently Viewed** - Last 5 viewed recipes shown on home page
-- **Keyboard Shortcuts** - Press `?` to see all navigation shortcuts
+### Barcode Scanning (v1.3.0+)
+- **Camera Scanning** - Scan grocery barcodes directly into pantry
+- **Open Food Facts Integration** - Auto-fills product info from 3M+ products
+- **Quick Add** - Frequently bought items, recent items, common staples
+- **Bulk Import** - Paste a list or upload CSV to add multiple items
+
+### Smart Features (v1.3.0+)
+- **Nutrition Tracking** - See nutritional info for recipes
+- **Ingredient Substitutions** - 50+ substitution rules when you're missing something
+- **Price Tracking** - Track prices, see trends, estimate recipe costs
+- **Shopping Insights** - Purchase frequency and "time to restock" predictions
+
+### Unified Ingredients (v1.4.0+)
+- **Linked Ingredients** - Recipe ingredients link to your ingredient database
+- **Auto-Matching** - Scraped recipes automatically match to known ingredients
+- **Enriched Display** - See allergens, dietary badges, substitutes on recipe pages
+- **Migration Tools** - Convert old recipes to new format
+
+### Open Food Facts Contribution (v1.5.0)
+- **Give Back** - Contribute new products to the open food database
+- **Add Missing Products** - When a barcode scan finds nothing, add the product
+- **Share Data** - Help build the world's largest open food database
+
+### Quality of Life
+- **Dark Mode** - System-wide dark theme with toggle
+- **Mobile Responsive** - Works on phones and tablets
+- **Toast Notifications** - Non-blocking feedback
+- **Recently Viewed** - Quick access to recent recipes
+- **Keyboard Shortcuts** - Press `?` to see all shortcuts
 - **Duplicate Detection** - Warning when importing similar recipes
-- **Image Upload** - Upload photos directly instead of only URLs
-- **Improved Home Page** - Stats, suggestions, and quick actions
+- **Image Upload** - Upload photos directly
 
 ## Tech Stack
 
 - **Backend**: Node.js + Express.js
 - **Frontend**: Plain HTML, CSS, JavaScript (no build step)
-- **Data Storage**: Markdown files (recipes) + JSON files (lists, collections)
-- **Dependencies**: gray-matter, marked, open-graph-scraper, uuid
+- **Data Storage**: Markdown files (recipes) + JSON files (lists, collections, ingredients)
+- **External APIs**: Open Food Facts (barcode lookup and contribution)
 
 ## Installation
 
@@ -59,7 +81,8 @@ A personal recipe management web app for storing, organizing, and cooking from y
 ### Setup
 
 ```bash
-# Clone or download the repository
+# Clone the repository
+git clone https://github.com/jdshupe/recipe-keeper.git
 cd recipe-keeper
 
 # Install dependencies
@@ -71,10 +94,24 @@ npm start
 
 The app will be available at `http://localhost:3000`
 
+### Production Deployment (PM2)
+
+```bash
+# Install PM2 globally
+npm install -g pm2
+
+# Start with PM2
+pm2 start server.js --name recipe-keeper
+
+# Save for auto-restart
+pm2 save
+pm2 startup
+```
+
 ### Development
 
 ```bash
-# Run with auto-reload (requires nodemon)
+# Run with auto-reload
 npm run dev
 ```
 
@@ -89,12 +126,17 @@ recipe-keeper/
 │   ├── recipes.js         # Recipe CRUD operations
 │   ├── scraper.js         # URL recipe extraction
 │   ├── shopping-lists.js  # Shopping list logic
-│   └── collections.js     # Collection management
+│   ├── collections.js     # Collection management
+│   └── ingredients.js     # Ingredient & pantry management
 ├── routes/
 │   ├── recipes.js         # /api/recipes endpoints
 │   ├── scrape.js          # /api/scrape endpoint
 │   ├── shopping-lists.js  # /api/shopping-lists endpoints
-│   └── collections.js     # /api/collections endpoints
+│   ├── collections.js     # /api/collections endpoints
+│   ├── ingredients.js     # /api/ingredients endpoints
+│   └── upload.js          # /api/upload endpoints
+├── scripts/
+│   └── migrate-ingredients.js  # Migration tool
 ├── public/
 │   ├── index.html         # Home page
 │   ├── recipes.html       # Recipe list
@@ -105,15 +147,18 @@ recipe-keeper/
 │   ├── tags.html          # Tag management
 │   ├── collections.html   # Collection list
 │   ├── collection.html    # Collection detail
+│   ├── pantry.html        # Pantry management
+│   ├── what-can-i-make.html  # Recipe suggestions
 │   ├── shopping-lists.html
 │   ├── shopping-list.html
 │   ├── shopping-list-new.html
 │   ├── css/style.css      # All styles
-│   └── js/app.js          # All client-side JavaScript
+│   └── js/app.js          # Shared client-side JavaScript
 └── content/
     ├── recipes/           # Markdown recipe files
     ├── shopping-lists/    # JSON shopping list files
-    └── collections/       # JSON collection files
+    ├── collections/       # JSON collection files
+    └── ingredients.json   # Ingredient database
 ```
 
 ## Data Format
@@ -134,15 +179,17 @@ source: https://example.com/recipe
 image: https://example.com/image.jpg
 favorite: true
 rating: 5
-notes: "Double the chocolate chips!"
+personalNotes: "Double the chocolate chips!"
 dateAdded: 2026-01-08T12:00:00.000Z
+ingredients:
+  - ingredientId: "uuid-or-null"
+    originalText: "2 cups all-purpose flour"
+    quantity: 2
+    unit: "cups"
+    name: "all-purpose flour"
+    preparation: null
+    matchConfidence: "exact"
 ---
-
-## Ingredients
-
-- 2 cups all-purpose flour
-- 1 cup butter, softened
-- 1 cup chocolate chips
 
 ## Instructions
 
@@ -153,35 +200,24 @@ dateAdded: 2026-01-08T12:00:00.000Z
 5. Bake for 10-12 minutes
 ```
 
-### Shopping Lists (JSON)
+### Ingredients Database (JSON)
 
 ```json
 {
   "id": "uuid",
-  "name": "Weekly Groceries",
-  "items": [
-    {
-      "id": "uuid",
-      "name": "2 cups flour",
-      "recipeTitle": "Chocolate Chip Cookies",
-      "checked": false
-    }
-  ],
-  "createdAt": "2026-01-08T12:00:00.000Z",
-  "updatedAt": "2026-01-08T12:00:00.000Z"
-}
-```
-
-### Collections (JSON)
-
-```json
-{
-  "id": "uuid",
-  "name": "Weeknight Dinners",
-  "description": "Quick meals for busy nights",
-  "recipeSlugs": ["one-pan-chicken", "pasta-primavera"],
-  "createdAt": "2026-01-08T12:00:00.000Z",
-  "updatedAt": "2026-01-08T12:00:00.000Z"
+  "name": "all-purpose flour",
+  "category": "baking",
+  "aliases": ["flour", "ap flour", "white flour"],
+  "allergens": ["gluten"],
+  "dietaryFlags": [],
+  "nutrition": { "calories": 455, "protein": 13, ... },
+  "pantry": {
+    "inStock": true,
+    "quantity": 5,
+    "unit": "lb",
+    "location": "pantry",
+    "expirationDate": "2026-06-01"
+  }
 }
 ```
 
@@ -192,53 +228,47 @@ dateAdded: 2026-01-08T12:00:00.000Z
 |--------|----------|-------------|
 | GET | /api/recipes | List all recipes |
 | GET | /api/recipes/:slug | Get single recipe |
+| GET | /api/recipes/:slug/enriched | Get with ingredient details |
+| GET | /api/recipes/:slug/nutrition | Calculate nutrition |
 | POST | /api/recipes | Create recipe |
 | PUT | /api/recipes/:slug | Update recipe |
 | DELETE | /api/recipes/:slug | Delete recipe |
 | PATCH | /api/recipes/:slug/favorite | Toggle favorite |
 | PATCH | /api/recipes/:slug/rating | Set rating |
-| PATCH | /api/recipes/:slug/notes | Update notes |
-| GET | /api/tags | List all tags with counts |
-| PUT | /api/tags/:tag/rename | Rename tag |
-| DELETE | /api/tags/:tag | Delete tag |
+| POST | /api/recipes/:slug/migrate-ingredients | Convert to structured |
 
-### Scraping
+### Ingredients & Pantry
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | /api/scrape | Extract recipe from URL |
-
-### Upload
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/upload | Upload recipe image (multipart/form-data) |
-| DELETE | /api/upload/:filename | Delete uploaded image |
+| GET | /api/ingredients | List all ingredients |
+| GET | /api/ingredients/:id | Get single ingredient |
+| POST | /api/ingredients | Create ingredient |
+| PUT | /api/ingredients/:id | Update ingredient |
+| GET | /api/ingredients/pantry | Get pantry items |
+| POST | /api/ingredients/pantry/bulk | Bulk add to pantry |
+| GET | /api/ingredients/barcode/:code | Open Food Facts lookup |
+| POST | /api/ingredients/off-contribute | Contribute to OFF |
 
 ### Shopping Lists
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | /api/shopping-lists | List all lists |
-| GET | /api/shopping-lists/:id | Get list (processed) |
-| GET | /api/shopping-lists/:id/raw | Get list (raw) |
+| GET | /api/shopping-lists/:id | Get list |
 | POST | /api/shopping-lists | Create list |
 | PUT | /api/shopping-lists/:id | Update list |
 | DELETE | /api/shopping-lists/:id | Delete list |
-| POST | /api/shopping-lists/:id/custom-item | Add custom item |
-| DELETE | /api/shopping-lists/:id/item/:itemId | Delete item |
 
 ### Collections
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | /api/collections | List all collections |
-| GET | /api/collections/:id | Get collection with recipes |
+| GET | /api/collections/:id | Get collection |
 | POST | /api/collections | Create collection |
 | PUT | /api/collections/:id | Update collection |
 | DELETE | /api/collections/:id | Delete collection |
-| POST | /api/collections/:id/recipes | Add recipe to collection |
-| DELETE | /api/collections/:id/recipes/:slug | Remove recipe |
 
 ## Keyboard Shortcuts
 
-### Global Navigation
 | Key | Action |
 |-----|--------|
 | ? | Show shortcuts help |
@@ -246,6 +276,8 @@ dateAdded: 2026-01-08T12:00:00.000Z
 | R | Go to Recipes |
 | C | Go to Collections |
 | S | Go to Shopping Lists |
+| P | Go to Pantry |
+| W | Go to What Can I Make? |
 | A | Add new recipe |
 | / | Focus search box |
 
@@ -255,12 +287,12 @@ dateAdded: 2026-01-08T12:00:00.000Z
 | → or Space | Next step |
 | ← | Previous step |
 | Escape | Exit cook mode |
-| i | Toggle ingredients sidebar |
+| i | Toggle ingredients |
 
 ## Browser Support
 
 - Chrome, Firefox, Safari, Edge (modern versions)
-- Mobile browsers supported (touch/swipe in cook mode)
+- Mobile browsers with touch/swipe support
 
 ## License
 
@@ -268,20 +300,38 @@ MIT License - feel free to use, modify, and share.
 
 ## Version History
 
+See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+
+### v1.5.0 (2026-01-27)
+- Open Food Facts contribution support
+- Improved API timeout handling
+- Bug fixes for tag handling
+
+### v1.4.0 (2026-01-26)
+- Unified ingredient database across all features
+- Ingredient picker with visual matching
+- Auto-matching on recipe import
+- Enriched recipe display with allergens/dietary badges
+
+### v1.3.0 (2026-01-26)
+- Barcode scanning with Open Food Facts
+- Quick add features (frequent, recent, staples)
+- Bulk import (paste list or CSV)
+- Nutrition tracking and recipe cost estimation
+- Ingredient substitutions
+- Price tracking and shopping insights
+
+### v1.2.0 (2026-01-26)
+- Mobile responsive design
+- Ingredient database and pantry management
+- "What Can I Make?" suggestions
+
 ### v1.1.0 (2026-01-26)
-- Dark mode with system preference detection
-- Toast notifications replacing alerts
-- Recently viewed recipes on home page
-- Quick add to shopping list from recipe cards
-- Global keyboard shortcuts
-- Duplicate recipe detection on import/add
-- Recipe image upload (drag & drop)
-- Improved home page with stats and suggestions
+- Dark mode
+- Toast notifications
+- Recently viewed recipes
+- Keyboard shortcuts
+- Image upload
 
 ### v1.0.0 (2026-01-08)
-- Initial release with all Phase 1-4 features
-- Search, favorites, print view
-- Manual entry, edit, notes/ratings
-- Cook mode, recipe scaling
-- Shopping lists with smart combining
-- Collections and tag management
+- Initial release
