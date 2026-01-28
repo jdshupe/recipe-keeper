@@ -237,6 +237,22 @@ The app runs at http://localhost:3000
 - CSS-only menu toggle with JS enhancements
 - Safe area insets for notched devices (iPhone X+)
 - Landscape orientation optimizations
+- **Extra-small screen support (320-360px)** for iPhone SE and older devices
+- **Condensed mobile layout** with consolidated stat cards and action grids
+- **Touch scroll locking** via `lockBodyScroll()`/`unlockBodyScroll()` helpers
+- **Body scroll prevention** when modals/menus open (`body.modal-open`, `body.menu-open` classes)
+- **Reduced motion support** via `prefers-reduced-motion` media query
+- **High contrast mode support** via `prefers-contrast: high` media query
+
+### CSS Breakpoints
+| Breakpoint | Target |
+|------------|--------|
+| `max-width: 1024px` | Small desktops/tablets |
+| `max-width: 896px` | Landscape phones |
+| `max-width: 768px` | Main mobile breakpoint (hamburger menu) |
+| `max-width: 640px` | Large phones |
+| `max-width: 480px` | Small phones |
+| `max-width: 360px` | Extra-small phones (iPhone SE) |
 
 ### Ingredient Database (lib/ingredients.js)
 - Canonical ingredient storage with aliases

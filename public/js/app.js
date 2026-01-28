@@ -9,6 +9,24 @@ async function api(endpoint, options = {}) {
 }
 
 // =====================
+// Mobile Body Scroll Lock Helpers
+// =====================
+
+function lockBodyScroll(lockType = 'modal') {
+  document.body.classList.add(`${lockType}-open`);
+  document.body.style.overflow = 'hidden';
+}
+
+function unlockBodyScroll(lockType = 'modal') {
+  document.body.classList.remove(`${lockType}-open`);
+  // Only restore overflow if no other locks are active
+  if (!document.body.classList.contains('modal-open') && 
+      !document.body.classList.contains('menu-open')) {
+    document.body.style.overflow = '';
+  }
+}
+
+// =====================
 // Keyboard Shortcuts
 // =====================
 
@@ -120,6 +138,7 @@ function showShortcutsModal() {
   `;
   
   document.body.appendChild(modal);
+  lockBodyScroll('modal');
   
   // Animate in
   requestAnimationFrame(() => {
@@ -131,6 +150,7 @@ function closeShortcutsModal() {
   const modal = document.getElementById('shortcuts-modal');
   if (modal) {
     modal.classList.remove('visible');
+    unlockBodyScroll('modal');
     setTimeout(() => modal.remove(), 200);
   }
 }
@@ -2857,6 +2877,7 @@ function showCreateCollectionModal() {
   document.getElementById('collection-id').value = '';
   document.getElementById('save-collection-btn').textContent = 'Create Collection';
   document.getElementById('collection-modal').classList.remove('hidden');
+  lockBodyScroll('modal');
 }
 
 // Show edit collection modal
@@ -2883,11 +2904,13 @@ async function showEditCollectionModal(id) {
   document.getElementById('collection-id').value = collection.id;
   document.getElementById('save-collection-btn').textContent = 'Save Changes';
   document.getElementById('collection-modal').classList.remove('hidden');
+  lockBodyScroll('modal');
 }
 
 // Close collection modal
 function closeCollectionModal() {
   document.getElementById('collection-modal').classList.add('hidden');
+  unlockBodyScroll('modal');
 }
 
 // Save collection (create or update)
@@ -3078,6 +3101,7 @@ async function showAddToCollectionModal(recipeSlug) {
   saveBtn.setAttribute('onclick', `saveRecipeCollections('${recipeSlug}')`);
   
   modal.classList.remove('hidden');
+  lockBodyScroll('modal');
 }
 
 // Close add to collection modal
@@ -3085,6 +3109,7 @@ function closeAddToCollectionModal() {
   const modal = document.getElementById('add-to-collection-modal');
   if (modal) {
     modal.classList.add('hidden');
+    unlockBodyScroll('modal');
   }
 }
 
@@ -3375,6 +3400,7 @@ function initMobileNav() {
     
     // Prevent body scroll when menu is open
     document.body.style.overflow = isOpen ? 'hidden' : '';
+    document.body.classList.toggle('menu-open', isOpen);
   }
   
   // Close menu
@@ -3384,6 +3410,7 @@ function initMobileNav() {
     overlay.classList.remove('active');
     hamburger.setAttribute('aria-expanded', 'false');
     document.body.style.overflow = '';
+    document.body.classList.remove('menu-open');
   }
   
   // Event listeners
