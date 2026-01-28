@@ -5,6 +5,29 @@ All notable changes to Recipe Keeper will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-01-27
+
+### Added
+- **Open Food Facts Contribution**: Give back to the open food database
+  - Configure OFF account credentials in Pantry settings
+  - When a barcode scan returns "Product not found", add it yourself
+  - Submit product name, brand, quantity, categories, ingredients, nutrition
+  - Upload product images
+  - Test login before saving credentials
+
+### Fixed
+- **API Timeout Handling**: Better error messages when OFF API is slow
+  - 15-second timeout on all OFF API calls
+  - Clear user-facing messages for timeout errors
+  - Loading indicators show expected wait time
+  
+- **Tag Handling**: Fixed crash when tags contain non-string values
+  - `getAllTags()` now validates tag types before processing
+  - `renameTag()` handles edge cases safely
+  - Prevents "tag.toLowerCase is not a function" errors
+
+---
+
 ## [1.4.0] - 2026-01-26
 
 ### Added
