@@ -1031,9 +1031,12 @@ function renderRecipeCard(recipe) {
   // Render tags with click handlers
   const renderTags = (tags) => {
     if (!tags || tags.length === 0) return '';
+    // Filter to only string tags
+    const validTags = tags.filter(tag => tag && typeof tag === 'string');
+    if (validTags.length === 0) return '';
     return `
       <div class="tags" onclick="event.preventDefault(); event.stopPropagation();">
-        ${tags.slice(0, 3).map(tag => 
+        ${validTags.slice(0, 3).map(tag => 
           `<span class="tag tag-clickable ${currentTagFilter && currentTagFilter.toLowerCase() === tag.toLowerCase() ? 'tag-active' : ''}" 
                  onclick="setTagFilter('${tag.replace(/'/g, "\\'")}')">${tag}</span>`
         ).join('')}
